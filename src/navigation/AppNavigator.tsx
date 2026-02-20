@@ -10,6 +10,7 @@ import { CaptureScreen } from '../screens/CaptureScreen';
 import { CourtOrdersScreen } from '../screens/CourtOrdersScreen';
 import { ReportsScreen } from '../screens/ReportsScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
+import { ProfileScreen } from '../screens/ProfileScreen';
 import { EvidenceDetailScreen } from '../screens/EvidenceDetailScreen';
 import { AudioRecorderScreen } from '../screens/AudioRecorderScreen';
 import { CourtOrderDetailScreen } from '../screens/CourtOrderDetailScreen';
@@ -29,6 +30,7 @@ export type TabParamList = {
   Orders: undefined;
   Reports: undefined;
   Settings: undefined;
+  Profile: undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -102,6 +104,16 @@ function MainTabs() {
           title: 'Settings',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="settings" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="person-circle" size={size} color={color} />
           ),
         }}
       />

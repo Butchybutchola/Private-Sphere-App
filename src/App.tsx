@@ -7,6 +7,7 @@ import { View, ActivityIndicator, StyleSheet } from 'react-native';
 
 import { AppNavigator } from './navigation/AppNavigator';
 import { DatabaseProvider } from './context/DatabaseContext';
+import { AuthProvider } from './context/AuthContext';
 import { AuthGate } from './components/AuthGate';
 import { PanicGestureProvider } from './context/PanicGestureContext';
 import { initDatabase } from './database/db';
@@ -30,16 +31,18 @@ export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <DatabaseProvider>
-          <PanicGestureProvider>
-            <AuthGate>
-              <NavigationContainer theme={navTheme}>
-                <AppNavigator />
-                <StatusBar style="light" />
-              </NavigationContainer>
-            </AuthGate>
-          </PanicGestureProvider>
-        </DatabaseProvider>
+        <AuthProvider>
+          <DatabaseProvider>
+            <PanicGestureProvider>
+              <AuthGate>
+                <NavigationContainer theme={navTheme}>
+                  <AppNavigator />
+                  <StatusBar style="light" />
+                </NavigationContainer>
+              </AuthGate>
+            </PanicGestureProvider>
+          </DatabaseProvider>
+        </AuthProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
