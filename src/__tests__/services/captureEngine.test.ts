@@ -57,7 +57,7 @@ describe('captureEngine', () => {
 
   describe('hardenAndStoreEvidence', () => {
     it('collects NTP time, location, device ID, and hashes the file', async () => {
-      const result = await hardenAndStoreEvidence('/tmp/photo.jpg', 'photo', 'image/jpeg');
+      await hardenAndStoreEvidence('/tmp/photo.jpg', 'photo', 'image/jpeg');
 
       expect(getNTPTime).toHaveBeenCalled();
       expect(getCurrentLocation).toHaveBeenCalled();

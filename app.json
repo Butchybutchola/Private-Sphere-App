@@ -40,6 +40,9 @@
         "READ_EXTERNAL_STORAGE"
       ]
     },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
     "plugins": [
       "expo-camera",
       "expo-location",

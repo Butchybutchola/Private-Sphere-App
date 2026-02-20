@@ -6,7 +6,7 @@
  */
 
 import React, { useEffect, useState, ReactNode } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { Ionicons } from '@expo/vector-icons';
 import { usePanicGesture } from '../context/PanicGestureContext';

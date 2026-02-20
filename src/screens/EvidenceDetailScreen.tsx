@@ -9,7 +9,6 @@ import { EvidenceItem } from '../types';
 import { getEvidenceById, updateEvidenceMetadata } from '../database/evidenceRepository';
 import { verifyEvidenceIntegrity } from '../services/captureEngine';
 import { transcribeAudio } from '../services/transcriptionService';
-import { getAuditLogForEvidence } from '../database/auditRepository';
 import { logAuditEvent } from '../database/auditRepository';
 import { useDatabase } from '../context/DatabaseContext';
 import { theme } from '../theme';
@@ -19,7 +18,7 @@ export function EvidenceDetailScreen() {
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
   const { evidenceId } = route.params;
-  const { refreshEvidence, courtOrders } = useDatabase();
+  const { refreshEvidence } = useDatabase();
 
   const [evidence, setEvidence] = useState<EvidenceItem | null>(null);
   const [loading, setLoading] = useState(true);
@@ -55,7 +54,7 @@ export function EvidenceDetailScreen() {
           ? `File hash matches original.\nSHA-256: ${result.currentHash.substring(0, 24)}...`
           : `File has been modified!\nOriginal: ${result.originalHash.substring(0, 24)}...\nCurrent: ${result.currentHash.substring(0, 24)}...`,
       );
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to verify integrity.');
     }
     setVerifying(false);

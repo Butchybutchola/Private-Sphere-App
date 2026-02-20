@@ -11,7 +11,6 @@
 
 import * as Crypto from 'expo-crypto';
 import * as SecureStore from 'expo-secure-store';
-import * as FileSystem from 'expo-file-system';
 
 const ENCRYPTION_KEY_STORE = 'evidence_guardian_enc_key';
 

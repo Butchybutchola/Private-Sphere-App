@@ -70,7 +70,7 @@ export function AudioRecorderScreen() {
       intervalRef.current = setInterval(() => {
         setDuration(d => d + 1);
       }, 1000);
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to start recording.');
     }
   };
@@ -112,7 +112,7 @@ export function AudioRecorderScreen() {
           { text: 'OK', onPress: () => navigation.goBack() },
         ]
       );
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to save recording.');
     } finally {
       setSaving(false);

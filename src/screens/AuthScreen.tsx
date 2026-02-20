@@ -47,7 +47,7 @@ export function AuthScreen() {
     setSubmitting(true);
     try {
       await signInAsGuest();
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to sign in as guest.');
     } finally {
       setSubmitting(false);

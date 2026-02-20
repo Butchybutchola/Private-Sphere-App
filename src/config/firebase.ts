@@ -10,7 +10,7 @@
 
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
 import { initializeAuth, Auth } from 'firebase/auth';
-// @ts-ignore – React Native persistence lives in a sub-path since Firebase v11
+// @ts-expect-error – React Native persistence lives in a sub-path since Firebase v11
 import { getReactNativePersistence } from 'firebase/auth/react-native';
 import { getFirestore, Firestore } from 'firebase/firestore';
 import { getStorage, FirebaseStorage } from 'firebase/storage';

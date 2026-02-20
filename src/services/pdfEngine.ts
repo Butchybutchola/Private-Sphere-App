@@ -13,7 +13,6 @@ import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
 import { EvidenceItem, CourtOrder, BreachLog, AuditLogEntry } from '../types';
-import { hashString } from './hashService';
 import { logAuditEvent } from '../database/auditRepository';
 import { generateUUID } from '../utils/uuid';
 import { format } from 'date-fns';

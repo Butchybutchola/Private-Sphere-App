@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, TextInput,
-  StyleSheet, Alert, FlatList,
+  StyleSheet, Alert,
 } from 'react-native';
 import { useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { CourtOrder, CourtOrderClause, BreachLog } from '../types';
+import { CourtOrder, BreachLog } from '../types';
 import { getCourtOrderById, addClause, getBreachLogsForOrder } from '../database/courtOrderRepository';
 import { theme } from '../theme';
 import { format } from 'date-fns';
