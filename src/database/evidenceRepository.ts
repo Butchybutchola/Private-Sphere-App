@@ -1,6 +1,9 @@
 import { getDatabase } from './db';
+import { type SQLiteBindValue } from 'expo-sqlite';
 import { EvidenceItem, EvidenceType, EvidenceStatus } from '../types';
 import { generateUUID } from '../utils/uuid';
+
+type Row = Record<string, unknown>;
 
 function rowToEvidence(row: Record<string, unknown>): EvidenceItem {
   return {
@@ -85,7 +88,7 @@ export async function insertEvidence(
 export async function getAllEvidence(): Promise<EvidenceItem[]> {
   const db = await getDatabase();
   const rows = await db.getAllAsync('SELECT * FROM evidence ORDER BY captured_at DESC');
-  return rows.map(rowToEvidence);
+  return (rows as Row[]).map(rowToEvidence);
 }
 
 export async function getEvidenceById(id: string): Promise<EvidenceItem | null> {
@@ -100,7 +103,7 @@ export async function getEvidenceByType(type: EvidenceType): Promise<EvidenceIte
     'SELECT * FROM evidence WHERE type = ? ORDER BY captured_at DESC',
     [type]
   );
-  return rows.map(rowToEvidence);
+  return (rows as Row[]).map(rowToEvidence);
 }
 
 export async function getEvidenceByCourtOrder(courtOrderId: string): Promise<EvidenceItem[]> {
@@ -109,7 +112,7 @@ export async function getEvidenceByCourtOrder(courtOrderId: string): Promise<Evi
     'SELECT * FROM evidence WHERE court_order_id = ? ORDER BY captured_at DESC',
     [courtOrderId]
   );
-  return rows.map(rowToEvidence);
+  return (rows as Row[]).map(rowToEvidence);
 }
 
 export async function updateEvidenceMetadata(
@@ -118,7 +121,7 @@ export async function updateEvidenceMetadata(
 ): Promise<void> {
   const db = await getDatabase();
   const setClauses: string[] = [];
-  const values: unknown[] = [];
+  const values: SQLiteBindValue[] = [];
 
   if (updates.title !== undefined) {
     setClauses.push('title = ?');
@@ -170,7 +173,7 @@ export async function getEvidenceVersions(originalId: string): Promise<EvidenceI
     'SELECT * FROM evidence WHERE id = ? OR parent_id = ? ORDER BY version_number ASC',
     [originalId, originalId]
   );
-  return rows.map(rowToEvidence);
+  return (rows as Row[]).map(rowToEvidence);
 }
 
 export async function searchEvidence(query: string): Promise<EvidenceItem[]> {
@@ -182,5 +185,5 @@ export async function searchEvidence(query: string): Promise<EvidenceItem[]> {
      ORDER BY captured_at DESC`,
     [pattern, pattern, pattern, pattern]
   );
-  return rows.map(rowToEvidence);
+  return (rows as Row[]).map(rowToEvidence);
 }

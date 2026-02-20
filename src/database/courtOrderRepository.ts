@@ -2,6 +2,8 @@ import { getDatabase } from './db';
 import { CourtOrder, CourtOrderClause, BreachLog } from '../types';
 import { generateUUID } from '../utils/uuid';
 
+type Row = Record<string, unknown>;
+
 export async function insertCourtOrder(
   order: Omit<CourtOrder, 'id' | 'createdAt' | 'clauses'>
 ): Promise<string> {
@@ -81,7 +83,7 @@ export async function getClausesForOrder(courtOrderId: string): Promise<CourtOrd
     [courtOrderId]
   );
 
-  return rows.map((r: Record<string, unknown>) => ({
+  return (rows as Row[]).map((r) => ({
     id: r.id as string,
     courtOrderId: r.court_order_id as string,
     clauseNumber: r.clause_number as string,
@@ -112,7 +114,7 @@ export async function getBreachLogsForOrder(courtOrderId: string): Promise<Breac
     [courtOrderId]
   );
 
-  return rows.map((r: Record<string, unknown>) => ({
+  return (rows as Row[]).map((r) => ({
     id: r.id as string,
     evidenceId: r.evidence_id as string,
     courtOrderId: r.court_order_id as string,
@@ -130,7 +132,7 @@ export async function getBreachLogsForEvidence(evidenceId: string): Promise<Brea
     [evidenceId]
   );
 
-  return rows.map((r: Record<string, unknown>) => ({
+  return (rows as Row[]).map((r) => ({
     id: r.id as string,
     evidenceId: r.evidence_id as string,
     courtOrderId: r.court_order_id as string,

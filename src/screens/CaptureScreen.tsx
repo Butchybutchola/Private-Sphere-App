@@ -21,7 +21,7 @@ import { theme } from '../theme';
 export function CaptureScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const [capturing, setCapturing] = useState(false);
-  const [mode, setMode] = useState<'photo' | 'video'>('photo');
+  const [mode, setMode] = useState<'picture' | 'video'>('picture');
   const [isRecording, setIsRecording] = useState(false);
   const [facing, setFacing] = useState<'front' | 'back'>('back');
   const cameraRef = useRef<CameraView>(null);
@@ -174,12 +174,12 @@ export function CaptureScreen() {
           <View style={styles.topBar}>
             <View style={styles.modeBadge}>
               <Ionicons
-                name={mode === 'photo' ? 'camera' : 'videocam'}
+                name={mode === 'picture' ? 'camera' : 'videocam'}
                 size={14}
                 color="#FFF"
               />
               <Text style={styles.modeText}>
-                {mode === 'photo' ? 'PHOTO' : 'VIDEO'}
+                {mode === 'picture' ? 'PHOTO' : 'VIDEO'}
                 {isRecording ? ' - REC' : ''}
               </Text>
             </View>
@@ -201,10 +201,10 @@ export function CaptureScreen() {
         {/* Mode Switcher */}
         <View style={styles.modeSwitcher}>
           <TouchableOpacity
-            style={[styles.modeTab, mode === 'photo' && styles.modeTabActive]}
-            onPress={() => setMode('photo')}
+            style={[styles.modeTab, mode === 'picture' && styles.modeTabActive]}
+            onPress={() => setMode('picture')}
           >
-            <Text style={[styles.modeTabText, mode === 'photo' && styles.modeTabTextActive]}>
+            <Text style={[styles.modeTabText, mode === 'picture' && styles.modeTabTextActive]}>
               Photo
             </Text>
           </TouchableOpacity>
@@ -232,7 +232,7 @@ export function CaptureScreen() {
               styles.captureButton,
               isRecording && styles.captureButtonRecording,
             ]}
-            onPress={mode === 'photo' ? capturePhoto : toggleVideoRecording}
+            onPress={mode === 'picture' ? capturePhoto : toggleVideoRecording}
             disabled={capturing && !isRecording}
           >
             {isRecording ? (
@@ -240,7 +240,7 @@ export function CaptureScreen() {
             ) : (
               <View style={[
                 styles.captureInner,
-                mode === 'video' && styles.captureInnerVideo,
+                mode !== 'picture' && styles.captureInnerVideo,
               ]} />
             )}
           </TouchableOpacity>

@@ -1,4 +1,5 @@
 import { getDatabase } from './db';
+import { type SQLiteBindValue } from 'expo-sqlite';
 import { AuditLogEntry, AuditAction } from '../types';
 import { generateUUID } from '../utils/uuid';
 
@@ -25,7 +26,7 @@ export async function getAuditLog(
 ): Promise<AuditLogEntry[]> {
   const db = await getDatabase();
   let query = 'SELECT * FROM audit_log';
-  const params: unknown[] = [];
+  const params: SQLiteBindValue[] = [];
   const conditions: string[] = [];
 
   if (resourceType) {
@@ -45,7 +46,7 @@ export async function getAuditLog(
   params.push(limit);
 
   const rows = await db.getAllAsync(query, params);
-  return rows.map((row: Record<string, unknown>) => ({
+  return (rows as Record<string, unknown>[]).map((row) => ({
     id: row.id as string,
     userId: row.user_id as string,
     action: row.action as AuditAction,
