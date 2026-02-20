@@ -9,7 +9,9 @@
  */
 
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
-import { initializeAuth, getReactNativePersistence, Auth } from 'firebase/auth';
+import { initializeAuth, Auth } from 'firebase/auth';
+// @ts-ignore – React Native persistence lives in a sub-path since Firebase v11
+import { getReactNativePersistence } from 'firebase/auth/react-native';
 import { getFirestore, Firestore } from 'firebase/firestore';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
