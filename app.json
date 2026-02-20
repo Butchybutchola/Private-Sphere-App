@@ -1,0 +1,48 @@
+{
+  "expo": {
+    "name": "Evidence Guardian",
+    "slug": "evidence-guardian",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#0A0E1A"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.evidenceguardian.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Evidence Guardian needs camera access to capture forensic evidence.",
+        "NSMicrophoneUsageDescription": "Evidence Guardian needs microphone access to record audio evidence.",
+        "NSLocationWhenInUseUsageDescription": "Evidence Guardian needs location access to tag evidence with GPS coordinates.",
+        "NSLocationAlwaysUsageDescription": "Evidence Guardian needs location access to tag evidence with GPS coordinates.",
+        "NSFaceIDUsageDescription": "Evidence Guardian uses biometric authentication to protect your evidence."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0A0E1A"
+      },
+      "package": "com.evidenceguardian.app",
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "USE_BIOMETRIC",
+        "USE_FINGERPRINT",
+        "WRITE_EXTERNAL_STORAGE",
+        "READ_EXTERNAL_STORAGE"
+      ]
+    },
+    "plugins": [
+      "expo-camera",
+      "expo-location",
+      "expo-av",
+      "expo-local-authentication",
+      "expo-secure-store"
+    ]
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "name": "evidence-guardian-admin",
+  "version": "1.0.0",
+  "description": "Admin dashboard for Evidence Guardian - manage users, subscriptions, and professional portal",
+  "private": true,
+  "scripts": {
+    "dev": "npx serve .",
+    "build": "echo 'Static dashboard - no build step required'"
+  }
+}
