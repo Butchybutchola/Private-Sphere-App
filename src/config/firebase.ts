@@ -16,14 +16,14 @@ import { getFirestore, Firestore } from 'firebase/firestore';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// ⚠️ REPLACE with your Firebase project config
 const firebaseConfig = {
-  apiKey: 'YOUR_API_KEY',
-  authDomain: 'YOUR_PROJECT.firebaseapp.com',
-  projectId: 'YOUR_PROJECT_ID',
-  storageBucket: 'YOUR_PROJECT.appspot.com',
-  messagingSenderId: 'YOUR_SENDER_ID',
-  appId: 'YOUR_APP_ID',
+  apiKey: 'AIzaSyBc_ogfELglUD-KRvCYYwgzLhrhxQyhDCI',
+  authDomain: 'evidence-guardian.firebaseapp.com',
+  projectId: 'evidence-guardian',
+  storageBucket: 'evidence-guardian.firebasestorage.app',
+  messagingSenderId: '284116413852',
+  appId: '1:284116413852:web:df6a3df4ea7d546577ac59',
+  measurementId: 'G-TPS8WBZR6C',
 };
 
 let app: FirebaseApp;
