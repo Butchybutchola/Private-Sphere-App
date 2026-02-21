@@ -2,7 +2,11 @@
   "expo": {
     "name": "Evidence Guardian",
     "slug": "evidence-guardian",
+    "owner": "evidence-guardian",
     "version": "1.0.0",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -12,6 +16,9 @@
       "backgroundColor": "#0A0E1A"
     },
     "assetBundlePatterns": ["**/*"],
+    "updates": {
+      "url": "https://u.expo.dev/YOUR_PROJECT_ID"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.evidenceguardian.app",
@@ -42,6 +49,11 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "YOUR_PROJECT_ID"
+      }
     },
     "plugins": [
       "expo-camera",
