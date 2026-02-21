@@ -17,7 +17,7 @@
     },
     "assetBundlePatterns": ["**/*"],
     "updates": {
-      "url": "https://u.expo.dev/YOUR_PROJECT_ID"
+      "url": "https://u.expo.dev/c6a5faf4-591a-41f6-a8d7-5c4a9602b36a"
     },
     "ios": {
       "supportsTablet": true,
@@ -52,7 +52,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "YOUR_PROJECT_ID"
+        "projectId": "c6a5faf4-591a-41f6-a8d7-5c4a9602b36a"
       }
     },
     "plugins": [
