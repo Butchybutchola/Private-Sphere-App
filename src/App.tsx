@@ -4,14 +4,69 @@ import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
 
 import { AppNavigator } from './navigation/AppNavigator';
 import { DatabaseProvider } from './context/DatabaseContext';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { AuthGate } from './components/AuthGate';
 import { PanicGestureProvider } from './context/PanicGestureContext';
+import { LoginScreen } from './screens/LoginScreen';
+import { OnboardingScreen } from './screens/OnboardingScreen';
 import { initDatabase } from './database/db';
 import { theme } from './theme';
+
+const ONBOARDING_KEY = 'evidence_guardian_onboarded';
+
+function AppContent() {
+  const { user, loading: authLoading, cloudEnabled } = useAuth();
+  const [onboarded, setOnboarded] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    SecureStore.getItemAsync(ONBOARDING_KEY).then(value => {
+      setOnboarded(value === 'true');
+    });
+  }, []);
+
+  if (onboarded === null || authLoading) {
+    return (
+      <View style={styles.loading}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+      </View>
+    );
+  }
+
+  // Show onboarding for first-time users
+  if (!onboarded) {
+    return (
+      <OnboardingScreen
+        onComplete={() => {
+          SecureStore.setItemAsync(ONBOARDING_KEY, 'true');
+          setOnboarded(true);
+        }}
+      />
+    );
+  }
+
+  // Show login if cloud is enabled and user is not signed in
+  if (cloudEnabled && !user) {
+    return <LoginScreen />;
+  }
+
+  // Main app with biometric gate
+  return (
+    <DatabaseProvider>
+      <PanicGestureProvider>
+        <AuthGate>
+          <NavigationContainer theme={navTheme}>
+            <AppNavigator />
+            <StatusBar style="light" />
+          </NavigationContainer>
+        </AuthGate>
+      </PanicGestureProvider>
+    </DatabaseProvider>
+  );
+}
 
 export default function App() {
   const [dbReady, setDbReady] = useState(false);
@@ -32,16 +87,7 @@ export default function App() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <AuthProvider>
-          <DatabaseProvider>
-            <PanicGestureProvider>
-              <AuthGate>
-                <NavigationContainer theme={navTheme}>
-                  <AppNavigator />
-                  <StatusBar style="light" />
-                </NavigationContainer>
-              </AuthGate>
-            </PanicGestureProvider>
-          </DatabaseProvider>
+          <AppContent />
         </AuthProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

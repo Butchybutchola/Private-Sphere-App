@@ -5,6 +5,9 @@ import {
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { Video, ResizeMode, Audio } from 'expo-av';
+import * as Sharing from 'expo-sharing';
+import * as FileSystem from 'expo-file-system';
 import { EvidenceItem } from '../types';
 import { getEvidenceById, updateEvidenceMetadata } from '../database/evidenceRepository';
 import { verifyEvidenceIntegrity } from '../services/captureEngine';
@@ -28,6 +31,16 @@ export function EvidenceDetailScreen() {
   const [editDescription, setEditDescription] = useState('');
   const [editingMeta, setEditingMeta] = useState(false);
 
+  // Tag management
+  const [newTag, setNewTag] = useState('');
+  const [editingTags, setEditingTags] = useState(false);
+
+  // Media playback
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [audioSound, setAudioSound] = useState<Audio.Sound | null>(null);
+  const [audioDuration, setAudioDuration] = useState(0);
+  const [audioPosition, setAudioPosition] = useState(0);
+
   const loadEvidence = useCallback(async () => {
     const item = await getEvidenceById(evidenceId);
     if (item) {
@@ -40,6 +53,10 @@ export function EvidenceDetailScreen() {
 
   useEffect(() => {
     loadEvidence();
+    return () => {
+      // Cleanup audio on unmount
+      audioSound?.unloadAsync();
+    };
   }, [loadEvidence]);
 
   const verifyIntegrity = async () => {
@@ -48,6 +65,7 @@ export function EvidenceDetailScreen() {
     try {
       const result = await verifyEvidenceIntegrity(evidence.id);
       setIntegrityStatus(result.valid ? 'valid' : 'tampered');
+      await logAuditEvent('viewed', 'evidence', evidence.id, { action: 'integrity_check', valid: result.valid });
       Alert.alert(
         result.valid ? 'Integrity Verified' : 'INTEGRITY VIOLATION',
         result.valid
@@ -90,6 +108,102 @@ export function EvidenceDetailScreen() {
     navigation.navigate('BreachLog', { evidenceId });
   };
 
+  // Share/Export evidence file
+  const handleShare = async () => {
+    if (!evidence) return;
+    try {
+      const isAvailable = await Sharing.isAvailableAsync();
+      if (!isAvailable) {
+        Alert.alert('Sharing Unavailable', 'Sharing is not available on this device.');
+        return;
+      }
+
+      // Check file exists
+      const fileInfo = await FileSystem.getInfoAsync(evidence.filePath);
+      if (!fileInfo.exists) {
+        Alert.alert('File Not Found', 'The evidence file could not be located.');
+        return;
+      }
+
+      await logAuditEvent('exported', 'evidence', evidence.id);
+      await Sharing.shareAsync(evidence.filePath, {
+        mimeType: evidence.mimeType,
+        dialogTitle: `Share Evidence: ${evidence.title || 'Untitled'}`,
+      });
+    } catch (error) {
+      Alert.alert('Share Failed', error instanceof Error ? error.message : 'Unknown error');
+    }
+  };
+
+  // Audio playback
+  const toggleAudioPlayback = async () => {
+    if (!evidence) return;
+
+    if (audioSound) {
+      if (isPlaying) {
+        await audioSound.pauseAsync();
+        setIsPlaying(false);
+      } else {
+        await audioSound.playAsync();
+        setIsPlaying(true);
+      }
+      return;
+    }
+
+    try {
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: evidence.filePath },
+        { shouldPlay: true },
+        (status) => {
+          if (status.isLoaded) {
+            setAudioPosition(status.positionMillis);
+            setAudioDuration(status.durationMillis ?? 0);
+            if (status.didJustFinish) {
+              setIsPlaying(false);
+              setAudioPosition(0);
+            }
+          }
+        }
+      );
+      setAudioSound(sound);
+      setIsPlaying(true);
+    } catch {
+      Alert.alert('Playback Error', 'Unable to play audio file.');
+    }
+  };
+
+  // Tag management
+  const addTag = async () => {
+    if (!evidence || !newTag.trim()) return;
+    const tag = newTag.trim().toLowerCase();
+    if (evidence.tags.includes(tag)) {
+      setNewTag('');
+      return;
+    }
+    const updatedTags = [...evidence.tags, tag];
+    await updateEvidenceMetadata(evidence.id, { tags: updatedTags });
+    await logAuditEvent('tagged', 'evidence', evidence.id, { tag_added: tag });
+    setNewTag('');
+    await loadEvidence();
+    await refreshEvidence();
+  };
+
+  const removeTag = async (tag: string) => {
+    if (!evidence) return;
+    const updatedTags = evidence.tags.filter(t => t !== tag);
+    await updateEvidenceMetadata(evidence.id, { tags: updatedTags });
+    await logAuditEvent('tagged', 'evidence', evidence.id, { tag_removed: tag });
+    await loadEvidence();
+    await refreshEvidence();
+  };
+
+  const formatDuration = (ms: number) => {
+    const sec = Math.floor(ms / 1000);
+    const min = Math.floor(sec / 60);
+    const rem = sec % 60;
+    return `${min}:${rem.toString().padStart(2, '0')}`;
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -112,14 +226,44 @@ export function EvidenceDetailScreen() {
       {evidence.type === 'photo' && (
         <Image source={{ uri: evidence.filePath }} style={styles.preview} resizeMode="contain" />
       )}
-      {evidence.type !== 'photo' && (
+      {evidence.type === 'video' && (
+        <Video
+          source={{ uri: evidence.filePath }}
+          style={styles.preview}
+          useNativeControls
+          resizeMode={ResizeMode.CONTAIN}
+          isLooping={false}
+        />
+      )}
+      {evidence.type === 'audio' && (
+        <View style={styles.audioPlayer}>
+          <TouchableOpacity style={styles.playButton} onPress={toggleAudioPlayback}>
+            <Ionicons
+              name={isPlaying ? 'pause-circle' : 'play-circle'}
+              size={64}
+              color={theme.colors.primary}
+            />
+          </TouchableOpacity>
+          <View style={styles.audioInfo}>
+            <View style={styles.progressBar}>
+              <View
+                style={[
+                  styles.progressFill,
+                  { width: audioDuration > 0 ? `${(audioPosition / audioDuration) * 100}%` : '0%' },
+                ]}
+              />
+            </View>
+            <View style={styles.audioTimes}>
+              <Text style={styles.timeText}>{formatDuration(audioPosition)}</Text>
+              <Text style={styles.timeText}>{formatDuration(audioDuration)}</Text>
+            </View>
+          </View>
+        </View>
+      )}
+      {evidence.type === 'document' && (
         <View style={styles.previewPlaceholder}>
-          <Ionicons
-            name={evidence.type === 'video' ? 'videocam' : evidence.type === 'audio' ? 'mic' : 'document'}
-            size={48}
-            color={theme.colors.textMuted}
-          />
-          <Text style={styles.previewType}>{evidence.type.toUpperCase()}</Text>
+          <Ionicons name="document" size={48} color={theme.colors.textMuted} />
+          <Text style={styles.previewType}>DOCUMENT</Text>
         </View>
       )}
 
@@ -185,7 +329,7 @@ export function EvidenceDetailScreen() {
             <TouchableOpacity onPress={() => setEditingMeta(true)}>
               <Text style={styles.title}>
                 {evidence.title || 'Untitled Evidence'}
-                <Ionicons name="pencil" size={14} color={theme.colors.textMuted} />
+                {' '}<Ionicons name="pencil" size={14} color={theme.colors.textMuted} />
               </Text>
             </TouchableOpacity>
             {evidence.description && (
@@ -230,6 +374,11 @@ export function EvidenceDetailScreen() {
           <Text style={styles.actionText}>Verify Integrity</Text>
         </TouchableOpacity>
 
+        <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
+          <Ionicons name="share-outline" size={20} color={theme.colors.accent} />
+          <Text style={styles.actionText}>Share / Export Evidence</Text>
+        </TouchableOpacity>
+
         {evidence.type === 'audio' && (
           <TouchableOpacity style={styles.actionButton} onPress={handleTranscribe}>
             <Ionicons name="text" size={20} color={theme.colors.accent} />
@@ -254,18 +403,55 @@ export function EvidenceDetailScreen() {
       )}
 
       {/* Tags */}
-      {evidence.tags.length > 0 && (
-        <View style={styles.section}>
+      <View style={styles.section}>
+        <View style={styles.tagHeader}>
           <Text style={styles.sectionTitle}>Tags</Text>
+          <TouchableOpacity onPress={() => setEditingTags(!editingTags)}>
+            <Ionicons
+              name={editingTags ? 'checkmark-circle' : 'add-circle-outline'}
+              size={22}
+              color={theme.colors.primary}
+            />
+          </TouchableOpacity>
+        </View>
+
+        {evidence.tags.length > 0 && (
           <View style={styles.tagRow}>
             {evidence.tags.map(tag => (
               <View key={tag} style={styles.tag}>
                 <Text style={styles.tagText}>{tag}</Text>
+                {editingTags && (
+                  <TouchableOpacity onPress={() => removeTag(tag)}>
+                    <Ionicons name="close-circle" size={16} color={theme.colors.danger} />
+                  </TouchableOpacity>
+                )}
               </View>
             ))}
           </View>
-        </View>
-      )}
+        )}
+
+        {editingTags && (
+          <View style={styles.addTagRow}>
+            <TextInput
+              style={styles.tagInput}
+              value={newTag}
+              onChangeText={setNewTag}
+              placeholder="Add tag..."
+              placeholderTextColor={theme.colors.textMuted}
+              autoCapitalize="none"
+              onSubmitEditing={addTag}
+              returnKeyType="done"
+            />
+            <TouchableOpacity style={styles.addTagButton} onPress={addTag}>
+              <Text style={styles.addTagButtonText}>Add</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {evidence.tags.length === 0 && !editingTags && (
+          <Text style={styles.noTagsText}>No tags. Tap + to add tags.</Text>
+        )}
+      </View>
     </ScrollView>
   );
 }
@@ -317,6 +503,41 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.sm,
     fontWeight: '600',
   },
+  // Audio player
+  audioPlayer: {
+    backgroundColor: theme.colors.surface,
+    padding: theme.spacing.lg,
+    alignItems: 'center',
+    gap: theme.spacing.md,
+  },
+  playButton: {
+    marginBottom: theme.spacing.sm,
+  },
+  audioInfo: {
+    width: '100%',
+  },
+  progressBar: {
+    height: 4,
+    backgroundColor: theme.colors.border,
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: theme.colors.primary,
+    borderRadius: 2,
+  },
+  audioTimes: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 4,
+  },
+  timeText: {
+    color: theme.colors.textMuted,
+    fontSize: theme.fontSize.xs,
+    fontFamily: 'monospace',
+  },
+  // Status
   statusBar: {
     flexDirection: 'row',
     gap: theme.spacing.sm,
@@ -449,12 +670,22 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.md,
     lineHeight: 22,
   },
+  // Tag management
+  tagHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   tagRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: theme.spacing.xs,
+    marginTop: theme.spacing.xs,
   },
   tag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     backgroundColor: theme.colors.primary + '20',
     paddingHorizontal: theme.spacing.sm,
     paddingVertical: 3,
@@ -463,5 +694,37 @@ const styles = StyleSheet.create({
   tagText: {
     color: theme.colors.primary,
     fontSize: theme.fontSize.sm,
+  },
+  addTagRow: {
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
+    marginTop: theme.spacing.sm,
+  },
+  tagInput: {
+    flex: 1,
+    backgroundColor: theme.colors.surface,
+    color: theme.colors.text,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.sm,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    fontSize: theme.fontSize.md,
+  },
+  addTagButton: {
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: theme.spacing.md,
+    justifyContent: 'center',
+    borderRadius: theme.borderRadius.sm,
+  },
+  addTagButtonText: {
+    color: '#FFF',
+    fontWeight: '600',
+    fontSize: theme.fontSize.md,
+  },
+  noTagsText: {
+    color: theme.colors.textMuted,
+    fontSize: theme.fontSize.sm,
+    fontStyle: 'italic',
   },
 });
