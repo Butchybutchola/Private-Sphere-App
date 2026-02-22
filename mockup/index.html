@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Evidence Guardian - App Preview</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #000; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+
+  /* Phone frame */
+  .phone { width: 100%; max-width: 393px; height: 100vh; max-height: 852px; background: #0A0E1A; overflow: hidden; position: relative; display: flex; flex-direction: column; }
+  @media (min-width: 500px) { .phone { border-radius: 40px; border: 3px solid #333; margin: 20px; } }
+
+  /* Status bar */
+  .status-bar { display: flex; justify-content: space-between; align-items: center; padding: 8px 24px; font-size: 12px; color: #fff; font-weight: 600; flex-shrink: 0; background: #0A0E1A; }
+  .status-bar .right { display: flex; gap: 6px; align-items: center; }
+
+  /* Screen area */
+  .screen-area { flex: 1; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+  .screen { display: none; min-height: 100%; }
+  .screen.active { display: block; }
+
+  /* Bottom tabs */
+  .tab-bar { display: flex; background: #141927; border-top: 1px solid #2A3142; padding: 6px 0 20px; flex-shrink: 0; }
+  .tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 0; cursor: pointer; transition: opacity .2s; }
+  .tab svg { width: 24px; height: 24px; fill: #5A6478; }
+  .tab span { font-size: 10px; color: #5A6478; }
+  .tab.active svg { fill: #4A90D9; }
+  .tab.active span { color: #4A90D9; }
+
+  /* Common styles */
+  .bg { background: #0A0E1A; }
+  .surface { background: #141927; }
+  .card { background: #141927; border: 1px solid #2A3142; border-radius: 12px; padding: 16px; margin-bottom: 8px; display: flex; align-items: center; gap: 16px; cursor: pointer; }
+  .card:active { opacity: .7; }
+
+  /* Typography */
+  h1 { color: #fff; font-size: 32px; font-weight: 700; }
+  h2 { color: #fff; font-size: 24px; font-weight: 700; }
+  h3 { color: #fff; font-size: 20px; font-weight: 600; }
+  .text { color: #fff; font-size: 14px; }
+  .text-secondary { color: #8892A4; font-size: 14px; }
+  .text-muted { color: #5A6478; font-size: 12px; }
+  .text-accent { color: #00C9A7; }
+
+  /* Buttons */
+  .btn-primary { background: #4A90D9; color: #fff; border: none; border-radius: 12px; padding: 14px 24px; font-size: 16px; font-weight: 700; width: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .btn-primary:active { background: #2C5F8A; }
+  .btn-outline { background: #141927; color: #8892A4; border: 1px solid #2A3142; border-radius: 12px; padding: 14px 24px; font-size: 16px; font-weight: 600; width: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+
+  /* Input */
+  .input-group { display: flex; align-items: center; background: #141927; border: 1px solid #2A3142; border-radius: 12px; padding: 0 16px; height: 52px; gap: 8px; margin-bottom: 8px; }
+  .input-group svg { width: 20px; height: 20px; fill: #5A6478; flex-shrink: 0; }
+  .input-group input { flex: 1; background: none; border: none; color: #fff; font-size: 14px; outline: none; }
+  .input-group input::placeholder { color: #5A6478; }
+
+  /* Search bar */
+  .search-bar { display: flex; align-items: center; background: #141927; border-radius: 12px; padding: 0 16px; height: 44px; margin: 16px; gap: 8px; }
+  .search-bar svg { width: 18px; height: 18px; fill: #5A6478; }
+  .search-bar input { flex: 1; background: none; border: none; color: #fff; font-size: 14px; outline: none; }
+  .search-bar input::placeholder { color: #5A6478; }
+
+  /* Chips */
+  .chip-row { display: flex; gap: 8px; padding: 0 16px; margin-bottom: 8px; overflow-x: auto; }
+  .chip { padding: 4px 16px; border-radius: 999px; background: #141927; border: 1px solid #2A3142; color: #8892A4; font-size: 12px; white-space: nowrap; cursor: pointer; }
+  .chip.active { background: #4A90D9; border-color: #4A90D9; color: #fff; font-weight: 600; }
+
+  /* Evidence type indicators */
+  .type-icon { width: 48px; height: 48px; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .type-icon svg { width: 24px; height: 24px; fill: #fff; }
+  .type-photo { background: #4A90D9; }
+  .type-video { background: #E74C3C; }
+  .type-audio { background: #F5A623; }
+  .type-doc { background: #27AE60; }
+
+  .badge { display: inline-flex; align-items: center; gap: 3px; background: #1E2538; padding: 2px 6px; border-radius: 4px; }
+  .badge svg { width: 10px; height: 10px; fill: #9B59B6; }
+  .badge span { color: #9B59B6; font-size: 10px; font-weight: 600; }
+  .hash { color: #5A6478; font-size: 10px; font-family: monospace; }
+  .chevron svg { width: 20px; height: 20px; fill: #5A6478; }
+
+  /* Login screen */
+  .login-content { padding: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100%; }
+  .logo-circle { width: 100px; height: 100px; border-radius: 50%; background: #141927; border: 2px solid rgba(74,144,217,0.25); display: flex; align-items: center; justify-content: center; margin-bottom: 16px; }
+  .logo-circle svg { width: 56px; height: 56px; fill: #4A90D9; }
+  .tagline { color: #8892A4; font-size: 14px; margin-top: 4px; margin-bottom: 32px; }
+  .mode-toggle { display: flex; background: #141927; border-radius: 12px; padding: 4px; margin-bottom: 24px; width: 100%; }
+  .mode-tab { flex: 1; padding: 8px; text-align: center; border-radius: 6px; color: #5A6478; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .mode-tab.active { background: #4A90D9; color: #fff; }
+  .divider { display: flex; align-items: center; gap: 16px; margin: 24px 0; width: 100%; }
+  .divider-line { flex: 1; height: 1px; background: #2A3142; }
+  .divider span { color: #5A6478; font-size: 12px; }
+  .guest-note { color: #5A6478; font-size: 12px; text-align: center; margin-top: 8px; }
+
+  /* Capture screen */
+  .camera-view { background: #1a1a2e; flex: 1; min-height: 400px; position: relative; display: flex; flex-direction: column; }
+  .camera-gradient { background: linear-gradient(180deg, rgba(0,0,0,0.4) 0%, transparent 30%, transparent 70%, rgba(10,14,26,0.9) 100%); flex: 1; display: flex; flex-direction: column; justify-content: space-between; padding: 16px; }
+  .camera-top { display: flex; justify-content: space-between; align-items: center; }
+  .camera-badge { display: flex; align-items: center; gap: 4px; background: rgba(0,0,0,0.6); padding: 4px 10px; border-radius: 999px; }
+  .camera-badge svg { width: 14px; height: 14px; fill: #fff; }
+  .camera-badge span { color: #fff; font-size: 12px; font-weight: 600; }
+  .forensic-label { color: #00C9A7; font-size: 10px; font-weight: 700; letter-spacing: 1px; }
+  .capture-controls { background: #0A0E1A; padding: 16px 0 24px; }
+  .mode-switcher { display: flex; justify-content: center; gap: 16px; margin-bottom: 16px; }
+  .mode-sw-tab { padding: 4px 24px; border-radius: 999px; color: #5A6478; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .mode-sw-tab.active { background: #141927; color: #fff; }
+  .action-row { display: flex; align-items: center; justify-content: space-around; padding: 0 32px; }
+  .side-btn { display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; }
+  .side-btn svg { width: 24px; height: 24px; fill: #fff; }
+  .side-btn span { color: #8892A4; font-size: 10px; }
+  .capture-btn { width: 72px; height: 72px; border-radius: 36px; border: 4px solid #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  .capture-btn:active { transform: scale(0.95); }
+  .capture-inner { width: 56px; height: 56px; border-radius: 28px; background: #fff; }
+  .flip-row { display: flex; align-items: center; justify-content: center; gap: 4px; margin-top: 8px; }
+  .flip-row svg { width: 20px; height: 20px; fill: #8892A4; }
+  .flip-row span { color: #8892A4; font-size: 12px; }
+
+  /* Court orders */
+  .upload-btn { display: flex; align-items: center; justify-content: center; gap: 8px; background: #141927; padding: 16px; border-radius: 12px; border: 1px dashed #4A90D9; margin-bottom: 16px; cursor: pointer; }
+  .upload-btn svg { width: 20px; height: 20px; fill: #4A90D9; }
+  .upload-btn span { color: #4A90D9; font-size: 14px; font-weight: 600; }
+  .order-icon { width: 48px; height: 48px; border-radius: 6px; background: rgba(74,144,217,0.08); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .order-icon svg { width: 24px; height: 24px; fill: #4A90D9; }
+  .clauses-text { color: #00C9A7; font-size: 12px; font-weight: 500; margin-top: 2px; }
+
+  /* Reports */
+  .reports-header { text-align: center; padding: 24px 0; }
+  .reports-header svg { width: 32px; height: 32px; fill: #4A90D9; margin-bottom: 8px; }
+  .reports-header p { color: #8892A4; font-size: 14px; margin-top: 8px; line-height: 1.5; }
+  .label { color: #8892A4; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-top: 24px; margin-bottom: 8px; }
+  .report-input { background: #141927; border: 1px solid #2A3142; border-radius: 12px; padding: 16px; color: #fff; font-size: 14px; width: 100%; outline: none; }
+  .report-input::placeholder { color: #5A6478; }
+  .type-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .type-chip { display: flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 12px; background: #141927; border: 1px solid #2A3142; cursor: pointer; }
+  .type-chip.active { background: #4A90D9; border-color: #4A90D9; }
+  .type-chip svg { width: 18px; height: 18px; fill: #5A6478; }
+  .type-chip.active svg { fill: #fff; }
+  .type-chip span { color: #5A6478; font-size: 14px; }
+  .type-chip.active span { color: #fff; font-weight: 600; }
+  .summary-box { background: #141927; padding: 16px; border-radius: 12px; text-align: center; margin-top: 24px; }
+
+  /* Settings */
+  .settings-content { padding: 16px; padding-bottom: 48px; }
+  .section-title { color: #8892A4; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-top: 24px; margin-bottom: 8px; }
+  .setting-row { display: flex; align-items: center; justify-content: space-between; background: #141927; padding: 16px; border-radius: 12px; margin-bottom: 8px; }
+  .setting-info { display: flex; align-items: center; gap: 16px; }
+  .setting-info svg { width: 22px; height: 22px; flex-shrink: 0; }
+  .setting-label { color: #fff; font-size: 14px; font-weight: 600; }
+  .setting-desc { color: #8892A4; font-size: 12px; margin-top: 2px; }
+  .toggle { width: 50px; height: 30px; border-radius: 15px; background: #4A90D9; position: relative; cursor: pointer; flex-shrink: 0; }
+  .toggle .knob { width: 26px; height: 26px; border-radius: 13px; background: #fff; position: absolute; top: 2px; right: 2px; transition: .2s; }
+  .status-dot { width: 10px; height: 10px; border-radius: 5px; flex-shrink: 0; }
+  .disguise-opt { display: flex; align-items: center; gap: 16px; background: #141927; padding: 16px; border-radius: 12px; margin-bottom: 4px; border: 1px solid #2A3142; cursor: pointer; }
+  .disguise-opt.active { border-color: #4A90D9; background: rgba(74,144,217,0.06); }
+  .disguise-opt svg { width: 24px; height: 24px; fill: #5A6478; }
+  .disguise-opt.active svg { fill: #4A90D9; }
+  .disguise-name { flex: 1; color: #fff; font-size: 14px; }
+  .disguise-opt.active .disguise-name { color: #4A90D9; font-weight: 600; }
+  .privacy-box { display: flex; gap: 8px; background: rgba(0,201,167,0.08); padding: 16px; border-radius: 12px; margin-top: 32px; }
+  .privacy-box svg { width: 18px; height: 18px; fill: #00C9A7; flex-shrink: 0; margin-top: 2px; }
+  .privacy-box p { color: #00C9A7; font-size: 12px; line-height: 1.5; }
+  .version-text { color: #5A6478; font-size: 10px; text-align: center; margin-top: 24px; }
+
+  /* Evidence Detail */
+  .detail-preview { width: 100%; height: 250px; background: linear-gradient(135deg, #1a1a2e 0%, #141927 100%); display: flex; align-items: center; justify-content: center; position: relative; }
+  .detail-preview img { width: 100%; height: 100%; object-fit: cover; }
+  .detail-status { display: flex; gap: 8px; padding: 16px; }
+  .status-badge { display: flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 6px; }
+  .status-badge svg { width: 14px; height: 14px; }
+  .status-badge span { font-size: 10px; font-weight: 700; letter-spacing: 0.5px; }
+  .detail-section { padding: 16px; border-top: 1px solid #2A3142; }
+  .meta-grid { background: #141927; border-radius: 12px; overflow: hidden; }
+  .meta-row { display: flex; padding: 8px 16px; border-bottom: 1px solid #2A3142; }
+  .meta-label { width: 100px; color: #8892A4; font-size: 12px; font-weight: 600; }
+  .meta-value { flex: 1; color: #fff; font-size: 12px; }
+  .meta-mono { font-family: monospace; font-size: 10px; word-break: break-all; }
+  .action-btn { display: flex; align-items: center; gap: 8px; background: #141927; padding: 16px; border-radius: 12px; margin-bottom: 8px; cursor: pointer; }
+  .action-btn:active { opacity: .7; }
+  .action-btn svg { width: 20px; height: 20px; }
+  .action-btn span { color: #fff; font-size: 14px; font-weight: 500; }
+  .tag-row { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+  .tag { display: flex; align-items: center; gap: 4px; background: rgba(74,144,217,0.12); padding: 3px 8px; border-radius: 6px; }
+  .tag span { color: #4A90D9; font-size: 12px; }
+
+  /* Empty states */
+  .empty-state { display: flex; flex-direction: column; align-items: center; padding-top: 100px; }
+  .empty-state svg { width: 64px; height: 64px; fill: #5A6478; }
+  .empty-state h3 { margin-top: 16px; }
+  .empty-state p { color: #8892A4; font-size: 14px; margin-top: 8px; text-align: center; padding: 0 32px; }
+
+  /* Nav header */
+  .nav-header { padding: 12px 16px; display: flex; align-items: center; gap: 8px; }
+  .nav-header h3 { font-size: 18px; }
+  .back-btn { cursor: pointer; padding: 4px; }
+  .back-btn svg { width: 24px; height: 24px; fill: #4A90D9; }
+
+  /* Scrollable areas */
+  .scroll-content { padding: 16px; padding-bottom: 24px; }
+
+  /* Animations */
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .card { animation: fadeIn .3s ease; }
+</style>
+</head>
+<body>
+<div class="phone">
+  <!-- Status Bar -->
+  <div class="status-bar">
+    <span>9:41</span>
+    <div class="right">
+      <svg viewBox="0 0 24 24" width="14" height="14"><path fill="#fff" d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
+      <svg viewBox="0 0 24 24" width="14" height="14"><path fill="#fff" d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+    </div>
+  </div>
+
+  <!-- Screen Area -->
+  <div class="screen-area">
+
+    <!-- LOGIN SCREEN -->
+    <div class="screen active" id="screen-login">
+      <div class="login-content">
+        <div class="logo-circle">
+          <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+        </div>
+        <h1>Evidence Guardian</h1>
+        <div class="tagline">Forensic-grade evidence protection</div>
+
+        <div class="mode-toggle">
+          <div class="mode-tab active">Sign In</div>
+          <div class="mode-tab">Register</div>
+        </div>
+
+        <div style="width:100%">
+          <div class="input-group">
+            <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+            <input type="email" placeholder="Email">
+          </div>
+          <div class="input-group">
+            <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+            <input type="password" placeholder="Password">
+          </div>
+          <button class="btn-primary" onclick="showTab('vault')" style="margin-top:8px">
+            <svg viewBox="0 0 24 24" width="20" height="20"><path fill="#fff" d="M11 7L9.6 8.4l2.6 2.6H2v2h10.2l-2.6 2.6L11 17l5-5-5-5zm9 12H12v2h8c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-8v2h8v14z"/></svg>
+            Sign In
+          </button>
+        </div>
+
+        <div class="divider">
+          <div class="divider-line"></div>
+          <span>or</span>
+          <div class="divider-line"></div>
+        </div>
+
+        <button class="btn-outline" onclick="showTab('vault')">
+          <svg viewBox="0 0 24 24" width="20" height="20"><path fill="#8892A4" d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/></svg>
+          Continue as Guest
+        </button>
+        <div class="guest-note">Guest mode stores everything locally. No cloud backup.</div>
+      </div>
+    </div>
+
+    <!-- VAULT SCREEN -->
+    <div class="screen" id="screen-vault">
+      <div class="search-bar">
+        <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+        <input type="text" placeholder="Search evidence...">
+      </div>
+
+      <div class="chip-row">
+        <div class="chip active">All</div>
+        <div class="chip">Photo</div>
+        <div class="chip">Video</div>
+        <div class="chip">Audio</div>
+        <div class="chip">Document</div>
+      </div>
+
+      <div style="padding:0 16px; margin-bottom:8px">
+        <span class="text-muted">3 evidence items</span>
+      </div>
+
+      <div class="scroll-content" style="padding-top:0">
+        <!-- Photo evidence -->
+        <div class="card" onclick="showDetail()">
+          <div class="type-icon type-photo">
+            <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+          </div>
+          <div style="flex:1">
+            <div class="text" style="font-weight:600">Front Door Camera</div>
+            <div class="text-muted" style="margin:2px 0 4px">Feb 21, 2026 14:32 UTC</div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <div class="badge"><svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2z"/></svg><span>LOCKED</span></div>
+              <span class="hash">SHA: a3f8b2c91e4d...</span>
+            </div>
+          </div>
+          <div class="chevron"><svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></div>
+        </div>
+
+        <!-- Video evidence -->
+        <div class="card" onclick="showDetail()">
+          <div class="type-icon type-video">
+            <svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+          </div>
+          <div style="flex:1">
+            <div class="text" style="font-weight:600">Property Visit Recording</div>
+            <div class="text-muted" style="margin:2px 0 4px">Feb 20, 2026 09:15 UTC</div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <div class="badge"><svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2z"/></svg><span>LOCKED</span></div>
+              <span class="hash">SHA: 7d2e1f4a8b3c...</span>
+            </div>
+          </div>
+          <div class="chevron"><svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></div>
+        </div>
+
+        <!-- Audio evidence -->
+        <div class="card" onclick="showDetail()">
+          <div class="type-icon type-audio">
+            <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>
+          </div>
+          <div style="flex:1">
+            <div class="text" style="font-weight:600">Phone Conversation</div>
+            <div class="text-muted" style="margin:2px 0 4px">Feb 19, 2026 18:44 UTC</div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <div class="badge"><svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2z"/></svg><span>LOCKED</span></div>
+              <span class="hash">SHA: e5c9d1a2f7b6...</span>
+            </div>
+          </div>
+          <div class="chevron"><svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></div>
+        </div>
+
+        <!-- Document evidence -->
+        <div class="card" onclick="showDetail()">
+          <div class="type-icon type-doc">
+            <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/></svg>
+          </div>
+          <div style="flex:1">
+            <div class="text" style="font-weight:600">Custody Agreement Scan</div>
+            <div class="text-muted" style="margin:2px 0 4px">Feb 18, 2026 11:20 UTC</div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <div class="badge"><svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2z"/></svg><span>LOCKED</span></div>
+              <span class="hash">SHA: 4b8c3d2e1f9a...</span>
+            </div>
+          </div>
+          <div class="chevron"><svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CAPTURE SCREEN -->
+    <div class="screen" id="screen-capture" style="display:flex;flex-direction:column;min-height:100%">
+      <div class="camera-view">
+        <div class="camera-gradient">
+          <div class="camera-top">
+            <div class="camera-badge">
+              <svg viewBox="0 0 24 24"><path fill="#fff" d="M12 12m-3.2 0a3.2 3.2 0 1 0 6.4 0a3.2 3.2 0 1 0-6.4 0M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9z"/></svg>
+              <span>PHOTO</span>
+            </div>
+            <div class="forensic-label">FORENSIC CAPTURE</div>
+          </div>
+          <div style="flex:1;display:flex;align-items:center;justify-content:center;opacity:.3">
+            <svg viewBox="0 0 24 24" width="80" height="80"><path fill="#5A6478" d="M12 12m-3.2 0a3.2 3.2 0 1 0 6.4 0a3.2 3.2 0 1 0-6.4 0M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9z"/></svg>
+          </div>
+        </div>
+      </div>
+      <div class="capture-controls">
+        <div class="mode-switcher">
+          <div class="mode-sw-tab active">Photo</div>
+          <div class="mode-sw-tab">Video</div>
+        </div>
+        <div class="action-row">
+          <div class="side-btn">
+            <svg viewBox="0 0 24 24"><path fill="#fff" d="M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg>
+            <span>Import</span>
+          </div>
+          <div class="capture-btn">
+            <div class="capture-inner"></div>
+          </div>
+          <div class="side-btn">
+            <svg viewBox="0 0 24 24"><path fill="#fff" d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>
+            <span>Audio</span>
+          </div>
+        </div>
+        <div class="flip-row">
+          <svg viewBox="0 0 24 24"><path fill="#8892A4" d="M9 12c0 1.66 1.34 3 3 3s3-1.34 3-3-1.34-3-3-3-3 1.34-3 3zm13.5-4.5h-3.17L17.5 5.5h-11L4.67 7.5H1.5c-1.1 0-2 .9-2 2v9c0 1.1.9 2 2 2h21c1.1 0 2-.9 2-2v-9c0-1.1-.9-2-2-2zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>
+          <span>Flip</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- COURT ORDERS SCREEN -->
+    <div class="screen" id="screen-orders">
+      <div class="scroll-content">
+        <div class="upload-btn">
+          <svg viewBox="0 0 24 24"><path d="M13 7h-2v4H7v2h4v4h2v-4h4v-2h-4V7zm-1-5C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
+          <span>Upload Court Order (PDF)</span>
+        </div>
+
+        <div class="card">
+          <div class="order-icon">
+            <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/></svg>
+          </div>
+          <div style="flex:1">
+            <div class="text" style="font-weight:600">Custody Order #2026-CF-0142</div>
+            <div class="text-muted">Uploaded: Feb 15, 2026</div>
+            <div class="clauses-text">4 clauses defined</div>
+          </div>
+          <div class="chevron"><svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></div>
+        </div>
+
+        <div class="card">
+          <div class="order-icon">
+            <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/></svg>
+          </div>
+          <div style="flex:1">
+            <div class="text" style="font-weight:600">Restraining Order #2026-RO-089</div>
+            <div class="text-muted">Uploaded: Feb 10, 2026</div>
+            <div class="clauses-text">2 clauses defined</div>
+          </div>
+          <div class="chevron"><svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REPORTS SCREEN -->
+    <div class="screen" id="screen-reports">
+      <div class="scroll-content">
+        <div class="reports-header">
+          <svg viewBox="0 0 24 24"><path fill="#4A90D9" d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+          <h2>Generate Evidence Report</h2>
+          <p>Create a court-ready PDF with metadata verification sheets, chronological index, and audit trail.</p>
+        </div>
+
+        <div class="label">Report Title</div>
+        <input class="report-input" value="Evidence Report" placeholder="Evidence Report">
+
+        <div class="label">Include Evidence Types</div>
+        <div class="type-chips">
+          <div class="type-chip active"><svg viewBox="0 0 24 24"><path fill="#fff" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-9 14l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg><span>Photo</span></div>
+          <div class="type-chip active"><svg viewBox="0 0 24 24"><path fill="#fff" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-9 14l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg><span>Video</span></div>
+          <div class="type-chip active"><svg viewBox="0 0 24 24"><path fill="#fff" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-9 14l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg><span>Audio</span></div>
+          <div class="type-chip active"><svg viewBox="0 0 24 24"><path fill="#fff" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-9 14l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg><span>Document</span></div>
+        </div>
+
+        <div class="summary-box">
+          <span class="text-secondary">4 evidence items will be included</span>
+        </div>
+
+        <button class="btn-primary" style="margin-top:24px">
+          <svg viewBox="0 0 24 24" width="20" height="20"><path fill="#fff" d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+          Generate PDF Report
+        </button>
+      </div>
+    </div>
+
+    <!-- SETTINGS SCREEN -->
+    <div class="screen" id="screen-settings">
+      <div class="settings-content">
+        <div class="section-title">Security</div>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <svg viewBox="0 0 24 24" fill="#4A90D9"><path d="M17.81 4.47c-.08 0-.16-.02-.23-.06C15.66 3.42 14 3 12.01 3c-1.98 0-3.86.47-5.57 1.41-.07.04-.15.06-.23.06-.17 0-.34-.09-.43-.25-.15-.27-.05-.61.21-.76 1.85-1.03 3.88-1.54 6.01-1.54 2.13 0 3.88.47 6.03 1.52.27.16.37.49.22.76-.09.16-.26.27-.44.27zM3.5 9.72c-.1 0-.2-.03-.29-.09-.23-.16-.28-.47-.12-.7.99-1.4 2.25-2.5 3.75-3.27C8.37 4.96 10.14 4.5 12 4.5c1.87 0 3.63.46 5.18 1.18 1.49.7 2.74 1.81 3.73 3.25.15.24.1.55-.14.71-.09.06-.19.09-.29.09-.16 0-.31-.08-.4-.21-.87-1.29-2.01-2.27-3.35-2.91-1.37-.65-2.91-1-4.73-1-1.81 0-3.35.34-4.7.98-1.34.64-2.49 1.62-3.37 2.93-.09.13-.24.21-.43.21zM12 21.35c-.13 0-.26-.05-.35-.15l-3.27-3.35c-.81-.88-1.26-1.99-1.26-3.15 0-1.27.5-2.45 1.38-3.34.88-.88 2.05-1.36 3.27-1.36h.47c1.22 0 2.39.49 3.27 1.36.88.89 1.38 2.07 1.38 3.34 0 1.16-.45 2.27-1.26 3.15l-3.27 3.35c-.09.1-.22.15-.36.15z"/></svg>
+            <div>
+              <div class="setting-label">Biometric Lock</div>
+              <div class="setting-desc">Require biometrics to open app</div>
+            </div>
+          </div>
+          <div class="toggle"><div class="knob"></div></div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <svg viewBox="0 0 24 24" fill="#00C9A7"><path d="M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>
+            <div>
+              <div class="setting-label">Encryption</div>
+              <div class="setting-desc">AES-256 (Active)</div>
+            </div>
+          </div>
+          <div class="status-dot" style="background:#27AE60"></div>
+        </div>
+
+        <div class="section-title">App Disguise</div>
+        <div style="color:#5A6478;font-size:12px;margin-bottom:8px">Change the app icon to appear as a different application.</div>
+
+        <div class="disguise-opt active">
+          <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+          <span class="disguise-name">Default (Evidence Guardian)</span>
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="#4A90D9"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+        </div>
+        <div class="disguise-opt">
+          <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4 14h-2v-4H9V9h2V7h2v2h2v4h-2v4z"/></svg>
+          <span class="disguise-name">Calculator</span>
+        </div>
+        <div class="disguise-opt">
+          <svg viewBox="0 0 24 24"><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6z"/></svg>
+          <span class="disguise-name">Weather</span>
+        </div>
+        <div class="disguise-opt">
+          <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+          <span class="disguise-name">Notes</span>
+        </div>
+
+        <div class="section-title">Time Verification</div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <svg viewBox="0 0 24 24" fill="#F5A623"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+            <div>
+              <div class="setting-label">NTP Time Sync</div>
+              <div class="setting-desc">Offset: -12ms</div>
+            </div>
+          </div>
+          <button style="background:#4A90D9;color:#fff;border:none;padding:4px 16px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">Sync</button>
+        </div>
+
+        <div class="privacy-box">
+          <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+          <p>Evidence Guardian does not use third-party analytics. Your data never leaves your device unless you explicitly export it.</p>
+        </div>
+
+        <div class="version-text">Evidence Guardian v1.0.0 (MVP)</div>
+      </div>
+    </div>
+
+    <!-- EVIDENCE DETAIL SCREEN -->
+    <div class="screen" id="screen-detail">
+      <div class="nav-header">
+        <div class="back-btn" onclick="showTab('vault')">
+          <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+        </div>
+        <h3>Evidence Detail</h3>
+      </div>
+
+      <div class="detail-preview">
+        <div style="text-align:center">
+          <svg viewBox="0 0 24 24" width="48" height="48"><path fill="#5A6478" d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+          <div class="text-muted" style="margin-top:8px">Photo Preview</div>
+        </div>
+      </div>
+
+      <div class="detail-status">
+        <div class="status-badge" style="background:rgba(155,89,182,0.12)">
+          <svg viewBox="0 0 24 24" fill="#9B59B6"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2z"/></svg>
+          <span style="color:#9B59B6">LOCKED</span>
+        </div>
+        <div class="status-badge" style="background:rgba(39,174,96,0.12)">
+          <svg viewBox="0 0 24 24" fill="#27AE60"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+          <span style="color:#27AE60">VERIFIED</span>
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <h3 style="font-size:20px">Front Door Camera</h3>
+        <div class="text-secondary" style="margin-top:4px">Captured unusual activity at front entrance</div>
+      </div>
+
+      <div class="detail-section">
+        <div class="section-title" style="margin-top:0">Forensic Metadata</div>
+        <div class="meta-grid">
+          <div class="meta-row"><span class="meta-label">SHA-256</span><span class="meta-value meta-mono">a3f8b2c91e4d7f6a8b3c2d1e0f9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1</span></div>
+          <div class="meta-row"><span class="meta-label">Captured (UTC)</span><span class="meta-value">2026-02-21 14:32:08</span></div>
+          <div class="meta-row"><span class="meta-label">Device ID</span><span class="meta-value meta-mono">iPhone15,3_8A4F2B</span></div>
+          <div class="meta-row"><span class="meta-label">GPS</span><span class="meta-value">-33.868820, 151.209296</span></div>
+          <div class="meta-row"><span class="meta-label">Accuracy</span><span class="meta-value">4.20 m</span></div>
+          <div class="meta-row"><span class="meta-label">File Size</span><span class="meta-value">3,847.25 KB</span></div>
+          <div class="meta-row"><span class="meta-label">MIME Type</span><span class="meta-value">image/jpeg</span></div>
+          <div class="meta-row" style="border:none"><span class="meta-label">Original</span><span class="meta-value">Yes (Master)</span></div>
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <div class="section-title" style="margin-top:0">Actions</div>
+        <div class="action-btn">
+          <svg viewBox="0 0 24 24" fill="#4A90D9"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+          <span>Verify Integrity</span>
+        </div>
+        <div class="action-btn">
+          <svg viewBox="0 0 24 24" fill="#00C9A7"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>
+          <span>Share / Export Evidence</span>
+        </div>
+        <div class="action-btn">
+          <svg viewBox="0 0 24 24" fill="#F5A623"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"/></svg>
+          <span>Log Breach Against Court Order</span>
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <div class="section-title" style="margin-top:0">Tags</div>
+        <div class="tag-row">
+          <div class="tag"><span>front-door</span></div>
+          <div class="tag"><span>surveillance</span></div>
+          <div class="tag"><span>custody</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Bottom Tab Bar -->
+  <div class="tab-bar" id="tab-bar">
+    <div class="tab active" onclick="showTab('vault')">
+      <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+      <span>Vault</span>
+    </div>
+    <div class="tab" onclick="showTab('capture')">
+      <svg viewBox="0 0 24 24"><path d="M12 12m-3.2 0a3.2 3.2 0 1 0 6.4 0a3.2 3.2 0 1 0-6.4 0M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9z"/></svg>
+      <span>Capture</span>
+    </div>
+    <div class="tab" onclick="showTab('orders')">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/></svg>
+      <span>Orders</span>
+    </div>
+    <div class="tab" onclick="showTab('reports')">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+      <span>Reports</span>
+    </div>
+    <div class="tab" onclick="showTab('settings')">
+      <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+      <span>Settings</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  const tabs = ['vault', 'capture', 'orders', 'reports', 'settings'];
+
+  function showTab(name) {
+    // Hide all screens
+    document.querySelectorAll('.screen').forEach(s => {
+      s.classList.remove('active');
+      s.style.display = 'none';
+    });
+
+    // Show target screen
+    const screen = document.getElementById('screen-' + name);
+    if (screen) {
+      screen.classList.add('active');
+      screen.style.display = name === 'capture' ? 'flex' : 'block';
+    }
+
+    // Show/hide tab bar (hide on login and detail)
+    const tabBar = document.getElementById('tab-bar');
+    if (name === 'login' || name === 'detail') {
+      tabBar.style.display = 'none';
+    } else {
+      tabBar.style.display = 'flex';
+    }
+
+    // Update active tab
+    document.querySelectorAll('.tab').forEach((tab, i) => {
+      tab.classList.toggle('active', tabs[i] === name);
+    });
+
+    // Scroll to top
+    document.querySelector('.screen-area').scrollTop = 0;
+  }
+
+  function showDetail() {
+    showTab('detail');
+  }
+
+  // Chip toggle behavior
+  document.querySelectorAll('.chip-row .chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.chip-row .chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+    });
+  });
+
+  // Mode toggle on login
+  document.querySelectorAll('.mode-toggle .mode-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.mode-toggle .mode-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+    });
+  });
+
+  // Start on login screen, hide tabs
+  document.getElementById('tab-bar').style.display = 'none';
+</script>
+</body>
+</html>
