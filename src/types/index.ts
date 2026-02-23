@@ -120,3 +120,97 @@ export interface AppSettings {
   ntpServer: string;
   encryptionKeyId: string;
 }
+
+// ---- User Profile & Party Details ----
+
+export type AustralianState = 'NSW' | 'VIC' | 'QLD' | 'WA' | 'SA' | 'TAS' | 'ACT' | 'NT';
+
+export interface UserProfile {
+  id: string;
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string; // YYYY-MM-DD
+  email: string;
+  phone: string;
+  address: string;
+  suburb: string;
+  state: AustralianState;
+  postcode: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface OtherParty {
+  id: string;
+  userId: string; // links to UserProfile
+  firstName: string;
+  lastName: string;
+  dateOfBirth?: string;
+  phone?: string;
+  address?: string;
+  suburb?: string;
+  state?: AustralianState;
+  postcode?: string;
+  relationship: string; // e.g. 'ex-partner', 'spouse', 'parent'
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Child {
+  id: string;
+  userId: string; // links to UserProfile
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string;
+  age?: number; // computed
+  livesWithUser: boolean;
+  custodyArrangement?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ---- Legislation ----
+
+export type LegislationJurisdiction = AustralianState | 'Federal';
+
+export interface Legislation {
+  id: string;
+  jurisdiction: LegislationJurisdiction;
+  title: string;
+  shortTitle: string;
+  category: 'dv_protection' | 'family_law' | 'criminal' | 'child_protection';
+  description: string;
+  url: string; // link to official legislation
+  lastAmended?: string;
+  keyProvisions: string; // JSON array of key sections
+  lastChecked: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface LegislationUpdate {
+  id: string;
+  legislationId: string;
+  title: string;
+  summary: string;
+  effectiveDate?: string;
+  sourceUrl: string;
+  publishedAt: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
+export interface CourtFeedItem {
+  id: string;
+  court: string;
+  jurisdiction: LegislationJurisdiction;
+  title: string;
+  summary: string;
+  url: string;
+  category: 'practice_direction' | 'media_release' | 'judgment' | 'notice' | 'legislative_update';
+  publishedAt: string;
+  isRead: boolean;
+  createdAt: string;
+}

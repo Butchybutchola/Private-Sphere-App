@@ -106,6 +106,94 @@ export async function initDatabase(): Promise<void> {
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
+    CREATE TABLE IF NOT EXISTS user_profiles (
+      id TEXT PRIMARY KEY NOT NULL,
+      first_name TEXT NOT NULL,
+      last_name TEXT NOT NULL,
+      date_of_birth TEXT NOT NULL,
+      email TEXT NOT NULL,
+      phone TEXT NOT NULL,
+      address TEXT NOT NULL,
+      suburb TEXT NOT NULL,
+      state TEXT NOT NULL,
+      postcode TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS other_parties (
+      id TEXT PRIMARY KEY NOT NULL,
+      user_id TEXT NOT NULL,
+      first_name TEXT NOT NULL,
+      last_name TEXT NOT NULL,
+      date_of_birth TEXT,
+      phone TEXT,
+      address TEXT,
+      suburb TEXT,
+      state TEXT,
+      postcode TEXT,
+      relationship TEXT NOT NULL,
+      notes TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES user_profiles(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS children (
+      id TEXT PRIMARY KEY NOT NULL,
+      user_id TEXT NOT NULL,
+      first_name TEXT NOT NULL,
+      last_name TEXT NOT NULL,
+      date_of_birth TEXT NOT NULL,
+      lives_with_user INTEGER NOT NULL DEFAULT 1,
+      custody_arrangement TEXT,
+      notes TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES user_profiles(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS legislation (
+      id TEXT PRIMARY KEY NOT NULL,
+      jurisdiction TEXT NOT NULL,
+      title TEXT NOT NULL,
+      short_title TEXT NOT NULL,
+      category TEXT NOT NULL CHECK(category IN ('dv_protection', 'family_law', 'criminal', 'child_protection')),
+      description TEXT NOT NULL,
+      url TEXT NOT NULL,
+      last_amended TEXT,
+      key_provisions TEXT NOT NULL DEFAULT '[]',
+      last_checked TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS legislation_updates (
+      id TEXT PRIMARY KEY NOT NULL,
+      legislation_id TEXT NOT NULL,
+      title TEXT NOT NULL,
+      summary TEXT NOT NULL,
+      effective_date TEXT,
+      source_url TEXT NOT NULL,
+      published_at TEXT NOT NULL,
+      is_read INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (legislation_id) REFERENCES legislation(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS court_feed (
+      id TEXT PRIMARY KEY NOT NULL,
+      court TEXT NOT NULL,
+      jurisdiction TEXT NOT NULL,
+      title TEXT NOT NULL,
+      summary TEXT NOT NULL,
+      url TEXT NOT NULL,
+      category TEXT NOT NULL CHECK(category IN ('practice_direction', 'media_release', 'judgment', 'notice', 'legislative_update')),
+      published_at TEXT NOT NULL,
+      is_read INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
     CREATE INDEX IF NOT EXISTS idx_evidence_type ON evidence(type);
     CREATE INDEX IF NOT EXISTS idx_evidence_status ON evidence(status);
     CREATE INDEX IF NOT EXISTS idx_evidence_captured_at ON evidence(captured_at);
@@ -114,5 +202,12 @@ export async function initDatabase(): Promise<void> {
     CREATE INDEX IF NOT EXISTS idx_breach_logs_court_order ON breach_logs(court_order_id);
     CREATE INDEX IF NOT EXISTS idx_audit_log_resource ON audit_log(resource_type, resource_id);
     CREATE INDEX IF NOT EXISTS idx_audit_log_timestamp ON audit_log(timestamp);
+    CREATE INDEX IF NOT EXISTS idx_other_parties_user ON other_parties(user_id);
+    CREATE INDEX IF NOT EXISTS idx_children_user ON children(user_id);
+    CREATE INDEX IF NOT EXISTS idx_legislation_jurisdiction ON legislation(jurisdiction);
+    CREATE INDEX IF NOT EXISTS idx_legislation_category ON legislation(category);
+    CREATE INDEX IF NOT EXISTS idx_legislation_updates_legislation ON legislation_updates(legislation_id);
+    CREATE INDEX IF NOT EXISTS idx_court_feed_jurisdiction ON court_feed(jurisdiction);
+    CREATE INDEX IF NOT EXISTS idx_court_feed_published ON court_feed(published_at);
   `);
 }
