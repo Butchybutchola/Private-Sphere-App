@@ -226,12 +226,13 @@
         <h1>Evidence Guardian</h1>
         <div class="tagline">Forensic-grade evidence protection</div>
 
-        <div class="mode-toggle">
-          <div class="mode-tab active">Sign In</div>
-          <div class="mode-tab">Register</div>
+        <div class="mode-toggle" id="login-mode-toggle">
+          <div class="mode-tab active" onclick="showLoginMode('signin')">Sign In</div>
+          <div class="mode-tab" onclick="showLoginMode('register')">Register</div>
         </div>
 
-        <div style="width:100%">
+        <!-- Sign In Form -->
+        <div id="form-signin" style="width:100%">
           <div class="input-group">
             <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
             <input type="email" placeholder="Email">
@@ -246,17 +247,84 @@
           </button>
         </div>
 
-        <div class="divider">
-          <div class="divider-line"></div>
-          <span>or</span>
-          <div class="divider-line"></div>
+        <!-- Register Form - Step 1 -->
+        <div id="form-register-1" style="width:100%;display:none">
+          <div style="color:#8892A4;font-size:14px;font-weight:600;margin-bottom:12px">Step 1 of 2: Account Details</div>
+          <div style="display:flex;gap:8px">
+            <div class="input-group" style="flex:1">
+              <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+              <input type="text" placeholder="First Name">
+            </div>
+            <div class="input-group" style="flex:1">
+              <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+              <input type="text" placeholder="Last Name">
+            </div>
+          </div>
+          <div class="input-group">
+            <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+            <input type="email" placeholder="Email">
+          </div>
+          <div class="input-group">
+            <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+            <input type="password" placeholder="Password (min 6 chars)">
+          </div>
+          <button class="btn-primary" onclick="showRegStep2()" style="margin-top:8px">
+            Next
+            <svg viewBox="0 0 24 24" width="20" height="20"><path fill="#fff" d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+          </button>
         </div>
 
-        <button class="btn-outline" onclick="showTab('vault')">
-          <svg viewBox="0 0 24 24" width="20" height="20"><path fill="#8892A4" d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/></svg>
-          Continue as Guest
-        </button>
-        <div class="guest-note">Guest mode stores everything locally. No cloud backup.</div>
+        <!-- Register Form - Step 2 -->
+        <div id="form-register-2" style="width:100%;display:none">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+            <div style="cursor:pointer;padding:4px" onclick="showRegStep1()">
+              <svg viewBox="0 0 24 24" width="20" height="20"><path fill="#4A90D9" d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+            </div>
+            <div style="color:#8892A4;font-size:14px;font-weight:600">Step 2 of 2: Personal Details</div>
+          </div>
+          <div class="input-group">
+            <svg viewBox="0 0 24 24"><path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/></svg>
+            <input type="text" placeholder="Date of Birth (DD/MM/YYYY)">
+          </div>
+          <div class="input-group">
+            <svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+            <input type="tel" placeholder="Phone Number">
+          </div>
+          <div class="input-group">
+            <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+            <input type="text" placeholder="Street Address">
+          </div>
+          <div style="display:flex;gap:8px">
+            <div class="input-group" style="flex:1">
+              <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+              <input type="text" placeholder="Suburb">
+            </div>
+            <div class="input-group" style="flex:1">
+              <input type="text" placeholder="Postcode" style="text-align:center">
+            </div>
+          </div>
+          <div style="color:#8892A4;font-size:12px;font-weight:600;margin:4px 0 6px">State / Territory</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">
+            <div class="chip active">NSW</div>
+            <div class="chip">VIC</div>
+            <div class="chip">QLD</div>
+            <div class="chip">WA</div>
+            <div class="chip">SA</div>
+            <div class="chip">TAS</div>
+            <div class="chip">ACT</div>
+            <div class="chip">NT</div>
+          </div>
+          <button class="btn-primary" onclick="showTab('vault')">
+            <svg viewBox="0 0 24 24" width="20" height="20"><path fill="#fff" d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+            Create Account
+          </button>
+        </div>
+
+        <!-- Security notice -->
+        <div style="display:flex;align-items:flex-start;gap:8px;margin-top:16px;padding:0 4px">
+          <svg viewBox="0 0 24 24" width="14" height="14" style="flex-shrink:0;margin-top:2px"><path fill="#00C9A7" d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2z"/></svg>
+          <span style="color:#5A6478;font-size:12px;line-height:1.5">Your data is encrypted and stored securely on your device. Registration is required to ensure evidence can be attributed to you in legal proceedings.</span>
+        </div>
       </div>
     </div>
 
@@ -521,6 +589,169 @@
       </div>
     </div>
 
+    <!-- LEGISLATION SCREEN -->
+    <div class="screen" id="screen-legislation">
+      <div class="chip-row" style="padding-top:16px">
+        <div class="chip active">All</div>
+        <div class="chip">Federal</div>
+        <div class="chip">NSW</div>
+        <div class="chip">VIC</div>
+        <div class="chip">QLD</div>
+        <div class="chip">WA</div>
+        <div class="chip">SA</div>
+        <div class="chip">TAS</div>
+        <div class="chip">ACT</div>
+        <div class="chip">NT</div>
+      </div>
+
+      <div class="scroll-content">
+        <!-- Federal Family Law -->
+        <div class="card" style="flex-direction:column;align-items:stretch;gap:8px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="display:flex;align-items:center;gap:4px;background:rgba(74,144,217,0.12);padding:3px 8px;border-radius:999px">
+              <svg viewBox="0 0 24 24" width="12" height="12"><path fill="#4A90D9" d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+              <span style="color:#4A90D9;font-size:10px;font-weight:700">Family Law</span>
+            </div>
+            <span style="color:#5A6478;font-size:10px;font-weight:700;background:#0A0E1A;padding:2px 8px;border-radius:4px">Federal</span>
+          </div>
+          <div style="color:#fff;font-size:16px;font-weight:700">Family Law Act</div>
+          <div style="color:#8892A4;font-size:12px">Family Law Act 1975 (Cth)</div>
+          <div style="color:#8892A4;font-size:14px;line-height:1.4">Primary federal legislation governing family law matters including parenting orders, property settlement, and family violence considerations.</div>
+          <div style="text-align:center;margin-top:4px">
+            <svg viewBox="0 0 24 24" width="16" height="16"><path fill="#5A6478" d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/></svg>
+          </div>
+        </div>
+
+        <!-- NSW DV Act -->
+        <div class="card" style="flex-direction:column;align-items:stretch;gap:8px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="display:flex;align-items:center;gap:4px;background:rgba(231,76,60,0.12);padding:3px 8px;border-radius:999px">
+              <svg viewBox="0 0 24 24" width="12" height="12"><path fill="#E74C3C" d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+              <span style="color:#E74C3C;font-size:10px;font-weight:700">DV Protection</span>
+            </div>
+            <span style="color:#5A6478;font-size:10px;font-weight:700;background:#0A0E1A;padding:2px 8px;border-radius:4px">NSW</span>
+          </div>
+          <div style="color:#fff;font-size:16px;font-weight:700">NSW DV Act</div>
+          <div style="color:#8892A4;font-size:12px">Crimes (Domestic and Personal Violence) Act 2007 (NSW)</div>
+          <div style="color:#8892A4;font-size:14px;line-height:1.4">Primary NSW legislation for ADVOs and APVOs. Defines domestic violence offences and protection order framework.</div>
+          <div style="text-align:center;margin-top:4px">
+            <svg viewBox="0 0 24 24" width="16" height="16"><path fill="#5A6478" d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/></svg>
+          </div>
+        </div>
+
+        <!-- VIC FV Act -->
+        <div class="card" style="flex-direction:column;align-items:stretch;gap:8px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="display:flex;align-items:center;gap:4px;background:rgba(231,76,60,0.12);padding:3px 8px;border-radius:999px">
+              <svg viewBox="0 0 24 24" width="12" height="12"><path fill="#E74C3C" d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+              <span style="color:#E74C3C;font-size:10px;font-weight:700">DV Protection</span>
+            </div>
+            <span style="color:#5A6478;font-size:10px;font-weight:700;background:#0A0E1A;padding:2px 8px;border-radius:4px">VIC</span>
+          </div>
+          <div style="color:#fff;font-size:16px;font-weight:700">Vic FV Act</div>
+          <div style="color:#8892A4;font-size:12px">Family Violence Protection Act 2008 (Vic)</div>
+          <div style="color:#8892A4;font-size:14px;line-height:1.4">Primary Victorian legislation for family violence intervention orders (FVIOs). Broad definition including economic abuse and coercive control.</div>
+          <div style="text-align:center;margin-top:4px">
+            <svg viewBox="0 0 24 24" width="16" height="16"><path fill="#5A6478" d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/></svg>
+          </div>
+        </div>
+
+        <!-- QLD Coercive Control -->
+        <div class="card" style="flex-direction:column;align-items:stretch;gap:8px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="display:flex;align-items:center;gap:4px;background:rgba(245,166,35,0.12);padding:3px 8px;border-radius:999px">
+              <svg viewBox="0 0 24 24" width="12" height="12"><path fill="#F5A623" d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+              <span style="color:#F5A623;font-size:10px;font-weight:700">Criminal</span>
+            </div>
+            <span style="color:#5A6478;font-size:10px;font-weight:700;background:#0A0E1A;padding:2px 8px;border-radius:4px">QLD</span>
+          </div>
+          <div style="color:#fff;font-size:16px;font-weight:700">Qld Coercive Control Act</div>
+          <div style="color:#8892A4;font-size:12px">Criminal Code (Coercive Control) Amendment Act 2023 (Qld)</div>
+          <div style="color:#8892A4;font-size:14px;line-height:1.4">Criminalises coercive control in domestic relationships. Max 14 years imprisonment.</div>
+          <div style="text-align:center;margin-top:4px">
+            <svg viewBox="0 0 24 24" width="16" height="16"><path fill="#5A6478" d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COURT FEED SCREEN -->
+    <div class="screen" id="screen-courtfeed">
+      <div class="scroll-content">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+          <svg viewBox="0 0 24 24" width="16" height="16"><path fill="#5A6478" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+          <span style="color:#5A6478;font-size:12px">Tap an item to open the source. Unread items have a blue dot.</span>
+        </div>
+
+        <!-- Practice Direction -->
+        <div class="card" style="flex-direction:column;align-items:stretch;gap:8px;border-left:3px solid #4A90D9">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="display:flex;align-items:center;gap:4px;background:rgba(74,144,217,0.12);padding:3px 8px;border-radius:999px">
+              <svg viewBox="0 0 24 24" width="12" height="12"><path fill="#4A90D9" d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/></svg>
+              <span style="color:#4A90D9;font-size:10px;font-weight:700">Practice Direction</span>
+            </div>
+            <div style="width:8px;height:8px;border-radius:4px;background:#4A90D9"></div>
+          </div>
+          <div style="color:#fff;font-size:14px;font-weight:700;line-height:1.4">Updated Practice Direction: Family Violence Evidence in Parenting Matters</div>
+          <div style="color:#8892A4;font-size:12px;line-height:1.5">New guidance on the admissibility and presentation of family violence evidence in parenting proceedings, including digital evidence.</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid #2A3142">
+            <span style="color:#5A6478;font-size:10px">Federal Circuit and Family Court</span>
+            <span style="color:#5A6478;font-size:10px;font-weight:600">10 Jan 2025</span>
+          </div>
+        </div>
+
+        <!-- Notice -->
+        <div class="card" style="flex-direction:column;align-items:stretch;gap:8px;border-left:3px solid #4A90D9">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="display:flex;align-items:center;gap:4px;background:rgba(136,146,164,0.12);padding:3px 8px;border-radius:999px">
+              <svg viewBox="0 0 24 24" width="12" height="12"><path fill="#8892A4" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+              <span style="color:#8892A4;font-size:10px;font-weight:700">Notice</span>
+            </div>
+            <div style="width:8px;height:8px;border-radius:4px;background:#4A90D9"></div>
+          </div>
+          <div style="color:#fff;font-size:14px;font-weight:700;line-height:1.4">Changes to Family Violence Risk Assessment Framework</div>
+          <div style="color:#8892A4;font-size:12px;line-height:1.5">Updated risk assessment procedures incorporating ALRC recommendations.</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid #2A3142">
+            <span style="color:#5A6478;font-size:10px">Family Court of Australia</span>
+            <span style="color:#5A6478;font-size:10px;font-weight:600">8 Jan 2025</span>
+          </div>
+        </div>
+
+        <!-- Media Release -->
+        <div class="card" style="flex-direction:column;align-items:stretch;gap:8px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="display:flex;align-items:center;gap:4px;background:rgba(0,201,167,0.12);padding:3px 8px;border-radius:999px">
+              <svg viewBox="0 0 24 24" width="12" height="12"><path fill="#00C9A7" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+              <span style="color:#00C9A7;font-size:10px;font-weight:700">Media Release</span>
+            </div>
+          </div>
+          <div style="color:#fff;font-size:14px;font-weight:700;line-height:1.4">Coercive Control Offence: First Sentencing Outcomes</div>
+          <div style="color:#8892A4;font-size:12px;line-height:1.5">First sentencing outcomes under the new coercive control offence provisions in NSW (s54D Crimes Act 1900).</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid #2A3142">
+            <span style="color:#5A6478;font-size:10px">NSW Local Court</span>
+            <span style="color:#5A6478;font-size:10px;font-weight:600">5 Jan 2025</span>
+          </div>
+        </div>
+
+        <!-- Legislative Update -->
+        <div class="card" style="flex-direction:column;align-items:stretch;gap:8px;border-left:3px solid #4A90D9">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="display:flex;align-items:center;gap:4px;background:rgba(231,76,60,0.12);padding:3px 8px;border-radius:999px">
+              <svg viewBox="0 0 24 24" width="12" height="12"><path fill="#E74C3C" d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+              <span style="color:#E74C3C;font-size:10px;font-weight:700">Legislative Update</span>
+            </div>
+            <div style="width:8px;height:8px;border-radius:4px;background:#4A90D9"></div>
+          </div>
+          <div style="color:#fff;font-size:14px;font-weight:700;line-height:1.4">Coercive Control Offence Commencement - Queensland</div>
+          <div style="color:#8892A4;font-size:12px;line-height:1.5">Full commencement of the coercive control offence under the Criminal Code Amendment Act 2023.</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid #2A3142">
+            <span style="color:#5A6478;font-size:10px">Queensland Magistrates Court</span>
+            <span style="color:#5A6478;font-size:10px;font-weight:600">20 Dec 2024</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- EVIDENCE DETAIL SCREEN -->
     <div class="screen" id="screen-detail">
       <div class="nav-header">
@@ -609,9 +840,13 @@
       <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/></svg>
       <span>Orders</span>
     </div>
-    <div class="tab" onclick="showTab('reports')">
-      <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
-      <span>Reports</span>
+    <div class="tab" onclick="showTab('legislation')">
+      <svg viewBox="0 0 24 24"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/></svg>
+      <span>Laws</span>
+    </div>
+    <div class="tab" onclick="showTab('courtfeed')">
+      <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
+      <span>Feed</span>
     </div>
     <div class="tab" onclick="showTab('settings')">
       <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
@@ -621,7 +856,7 @@
 </div>
 
 <script>
-  const tabs = ['vault', 'capture', 'orders', 'reports', 'settings'];
+  const tabs = ['vault', 'capture', 'orders', 'legislation', 'courtfeed', 'settings'];
 
   function showTab(name) {
     // Hide all screens
@@ -658,19 +893,40 @@
     showTab('detail');
   }
 
-  // Chip toggle behavior
-  document.querySelectorAll('.chip-row .chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-      document.querySelectorAll('.chip-row .chip').forEach(c => c.classList.remove('active'));
-      chip.classList.add('active');
-    });
-  });
+  // Login mode switching (Sign In / Register)
+  function showLoginMode(mode) {
+    const tabs = document.querySelectorAll('#login-mode-toggle .mode-tab');
+    tabs.forEach(t => t.classList.remove('active'));
+    if (mode === 'signin') {
+      tabs[0].classList.add('active');
+      document.getElementById('form-signin').style.display = 'block';
+      document.getElementById('form-register-1').style.display = 'none';
+      document.getElementById('form-register-2').style.display = 'none';
+    } else {
+      tabs[1].classList.add('active');
+      document.getElementById('form-signin').style.display = 'none';
+      document.getElementById('form-register-1').style.display = 'block';
+      document.getElementById('form-register-2').style.display = 'none';
+    }
+  }
 
-  // Mode toggle on login
-  document.querySelectorAll('.mode-toggle .mode-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      document.querySelectorAll('.mode-toggle .mode-tab').forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
+  function showRegStep2() {
+    document.getElementById('form-register-1').style.display = 'none';
+    document.getElementById('form-register-2').style.display = 'block';
+  }
+
+  function showRegStep1() {
+    document.getElementById('form-register-1').style.display = 'block';
+    document.getElementById('form-register-2').style.display = 'none';
+  }
+
+  // Chip toggle behavior (scoped to each chip-row)
+  document.querySelectorAll('.chip-row').forEach(row => {
+    row.querySelectorAll('.chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        row.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+      });
     });
   });
 

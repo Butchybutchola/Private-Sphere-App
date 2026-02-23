@@ -14,6 +14,7 @@ import { PanicGestureProvider } from './context/PanicGestureContext';
 import { LoginScreen } from './screens/LoginScreen';
 import { OnboardingScreen } from './screens/OnboardingScreen';
 import { initDatabase } from './database/db';
+import { seedLegislationData } from './database/legislationSeedData';
 import { theme } from './theme';
 
 const ONBOARDING_KEY = 'evidence_guardian_onboarded';
@@ -72,7 +73,10 @@ export default function App() {
   const [dbReady, setDbReady] = useState(false);
 
   useEffect(() => {
-    initDatabase().then(() => setDbReady(true));
+    initDatabase()
+      .then(() => seedLegislationData())
+      .then(() => setDbReady(true))
+      .catch(() => setDbReady(true)); // still start app if seed fails
   }, []);
 
   if (!dbReady) {

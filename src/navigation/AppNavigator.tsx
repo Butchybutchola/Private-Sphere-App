@@ -15,6 +15,8 @@ import { EvidenceDetailScreen } from '../screens/EvidenceDetailScreen';
 import { AudioRecorderScreen } from '../screens/AudioRecorderScreen';
 import { CourtOrderDetailScreen } from '../screens/CourtOrderDetailScreen';
 import { BreachLogScreen } from '../screens/BreachLogScreen';
+import { LegislationScreen } from '../screens/LegislationScreen';
+import { CourtFeedScreen } from '../screens/CourtFeedScreen';
 
 export type RootStackParamList = {
   MainTabs: undefined;
@@ -28,6 +30,8 @@ export type TabParamList = {
   Vault: undefined;
   Capture: undefined;
   Orders: undefined;
+  Legislation: undefined;
+  CourtFeed: undefined;
   Reports: undefined;
   Settings: undefined;
   Profile: undefined;
@@ -88,12 +92,32 @@ function MainTabs() {
         }}
       />
       <Tab.Screen
+        name="Legislation"
+        component={LegislationScreen}
+        options={{
+          title: 'Legislation',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="book" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="CourtFeed"
+        component={CourtFeedScreen}
+        options={{
+          title: 'Court Feed',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="newspaper" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
         name="Reports"
         component={ReportsScreen}
         options={{
           title: 'Reports',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="newspaper" size={size} color={color} />
+            <Ionicons name="analytics" size={size} color={color} />
           ),
         }}
       />
