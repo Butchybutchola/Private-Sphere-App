@@ -183,9 +183,13 @@ export interface Legislation {
   category: 'dv_protection' | 'family_law' | 'criminal' | 'child_protection';
   description: string;
   url: string; // link to official legislation
+  fullTextUrl?: string; // direct download URL for XML/PDF
   lastAmended?: string;
+  versionDate?: string; // date of current version in source
+  contentHash?: string; // SHA-256 hash of content for change detection
   keyProvisions: string; // JSON array of key sections
   lastChecked: string;
+  attribution?: string; // e.g. "© Australian Government, CC BY 4.0"
   createdAt: string;
   updatedAt: string;
 }
@@ -200,6 +204,20 @@ export interface LegislationUpdate {
   publishedAt: string;
   isRead: boolean;
   createdAt: string;
+}
+
+// ---- Updates Log (tracks polling results) ----
+
+export interface LegislationUpdateLog {
+  id: string;
+  legislationId: string;
+  changeType: 'version_change' | 'hash_mismatch' | 'new_amendment' | 'rss_update' | 'no_change';
+  previousHash?: string;
+  newHash?: string;
+  previousVersionDate?: string;
+  newVersionDate?: string;
+  sourceUrl: string;
+  timestamp: string;
 }
 
 export interface CourtFeedItem {

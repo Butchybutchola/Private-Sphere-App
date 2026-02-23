@@ -161,11 +161,28 @@ export async function initDatabase(): Promise<void> {
       category TEXT NOT NULL CHECK(category IN ('dv_protection', 'family_law', 'criminal', 'child_protection')),
       description TEXT NOT NULL,
       url TEXT NOT NULL,
+      full_text_url TEXT,
       last_amended TEXT,
+      version_date TEXT,
+      content_hash TEXT,
       key_provisions TEXT NOT NULL DEFAULT '[]',
       last_checked TEXT NOT NULL,
+      attribution TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS legislation_update_log (
+      id TEXT PRIMARY KEY NOT NULL,
+      legislation_id TEXT NOT NULL,
+      change_type TEXT NOT NULL CHECK(change_type IN ('version_change', 'hash_mismatch', 'new_amendment', 'rss_update', 'no_change')),
+      previous_hash TEXT,
+      new_hash TEXT,
+      previous_version_date TEXT,
+      new_version_date TEXT,
+      source_url TEXT NOT NULL,
+      timestamp TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (legislation_id) REFERENCES legislation(id)
     );
 
     CREATE TABLE IF NOT EXISTS legislation_updates (
@@ -209,5 +226,7 @@ export async function initDatabase(): Promise<void> {
     CREATE INDEX IF NOT EXISTS idx_legislation_updates_legislation ON legislation_updates(legislation_id);
     CREATE INDEX IF NOT EXISTS idx_court_feed_jurisdiction ON court_feed(jurisdiction);
     CREATE INDEX IF NOT EXISTS idx_court_feed_published ON court_feed(published_at);
+    CREATE INDEX IF NOT EXISTS idx_legislation_update_log_legislation ON legislation_update_log(legislation_id);
+    CREATE INDEX IF NOT EXISTS idx_legislation_update_log_timestamp ON legislation_update_log(timestamp);
   `);
 }

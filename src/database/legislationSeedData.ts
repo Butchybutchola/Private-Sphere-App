@@ -16,7 +16,8 @@ export const LEGISLATION_SEED_DATA: Omit<Legislation, 'createdAt' | 'updatedAt'>
     shortTitle: 'Family Law Act',
     category: 'family_law',
     description: 'Primary federal legislation governing family law matters including parenting orders, property settlement, divorce, and family violence considerations in parenting proceedings.',
-    url: 'https://www.legislation.gov.au/Details/C2024C00223',
+    url: 'https://www.legislation.gov.au/C2024C00101',
+    fullTextUrl: 'https://www.legislation.gov.au/Details/C2024C00101',
     lastAmended: '2024-06',
     keyProvisions: JSON.stringify([
       'Part VII - Children (s60B-s70Q): Parenting orders, best interests of the child',
@@ -26,6 +27,7 @@ export const LEGISLATION_SEED_DATA: Omit<Legislation, 'createdAt' | 'updatedAt'>
       's67ZBA: Power to make location/recovery orders',
     ]),
     lastChecked: '2025-01-15',
+    attribution: '\u00a9 Commonwealth of Australia, CC BY 4.0',
   },
   {
     id: 'fed-family-violence-act',
@@ -175,6 +177,7 @@ export const LEGISLATION_SEED_DATA: Omit<Legislation, 'createdAt' | 'updatedAt'>
     category: 'dv_protection',
     description: 'Primary Queensland legislation for domestic violence protection orders. Defines domestic violence broadly including coercive control, economic abuse, and technology-facilitated abuse.',
     url: 'https://www.legislation.qld.gov.au/view/html/inforce/current/act-2012-005',
+    fullTextUrl: 'https://api.legislation.qld.gov.au/v1/acts/DFVPA2012',
     lastAmended: '2024-10',
     keyProvisions: JSON.stringify([
       's8: Meaning of domestic violence (includes coercive behaviour)',
@@ -184,6 +187,7 @@ export const LEGISLATION_SEED_DATA: Omit<Legislation, 'createdAt' | 'updatedAt'>
       'ss43-56: Conditions that may be imposed',
     ]),
     lastChecked: '2025-01-15',
+    attribution: '\u00a9 State of Queensland, CC BY 4.0',
   },
   {
     id: 'qld-coercive-control',

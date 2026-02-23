@@ -1,5 +1,5 @@
 import { getDatabase } from './db';
-import { Legislation, LegislationUpdate, CourtFeedItem, LegislationJurisdiction } from '../types';
+import { Legislation, LegislationUpdate, LegislationUpdateLog, CourtFeedItem, LegislationJurisdiction } from '../types';
 import uuid from 'react-native-uuid';
 
 // ---- Legislation ----
@@ -32,17 +32,39 @@ export async function upsertLegislation(item: Omit<Legislation, 'createdAt' | 'u
   const db = await getDatabase();
   const now = new Date().toISOString();
   await db.runAsync(
-    `INSERT INTO legislation (id, jurisdiction, title, short_title, category, description, url, last_amended, key_provisions, last_checked, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `INSERT INTO legislation (id, jurisdiction, title, short_title, category, description, url, full_text_url, last_amended, version_date, content_hash, key_provisions, last_checked, attribution, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(id) DO UPDATE SET
        title = excluded.title, short_title = excluded.short_title,
        description = excluded.description, url = excluded.url,
-       last_amended = excluded.last_amended, key_provisions = excluded.key_provisions,
-       last_checked = excluded.last_checked, updated_at = ?`,
+       full_text_url = excluded.full_text_url,
+       last_amended = excluded.last_amended, version_date = excluded.version_date,
+       content_hash = excluded.content_hash, key_provisions = excluded.key_provisions,
+       last_checked = excluded.last_checked, attribution = excluded.attribution,
+       updated_at = ?`,
     item.id, item.jurisdiction, item.title, item.shortTitle,
-    item.category, item.description, item.url, item.lastAmended || null,
-    item.keyProvisions, item.lastChecked, now, now, now
+    item.category, item.description, item.url, item.fullTextUrl || null,
+    item.lastAmended || null, item.versionDate || null, item.contentHash || null,
+    item.keyProvisions, item.lastChecked, item.attribution || null,
+    now, now, now
   );
+}
+
+export async function updateLegislationHash(id: string, contentHash: string, versionDate?: string): Promise<void> {
+  const db = await getDatabase();
+  const now = new Date().toISOString();
+  await db.runAsync(
+    'UPDATE legislation SET content_hash = ?, version_date = ?, last_checked = ?, updated_at = ? WHERE id = ?',
+    contentHash, versionDate || null, now, now, id
+  );
+}
+
+export async function getLegislationById(id: string): Promise<Legislation | null> {
+  const db = await getDatabase();
+  const row = await db.getFirstAsync<Record<string, unknown>>(
+    'SELECT * FROM legislation WHERE id = ?', id
+  );
+  return row ? mapLegislation(row) : null;
 }
 
 function mapLegislation(row: Record<string, unknown>): Legislation {
@@ -54,9 +76,13 @@ function mapLegislation(row: Record<string, unknown>): Legislation {
     category: row.category as Legislation['category'],
     description: row.description as string,
     url: row.url as string,
+    fullTextUrl: row.full_text_url as string | undefined,
     lastAmended: row.last_amended as string | undefined,
+    versionDate: row.version_date as string | undefined,
+    contentHash: row.content_hash as string | undefined,
     keyProvisions: row.key_provisions as string,
     lastChecked: row.last_checked as string,
+    attribution: row.attribution as string | undefined,
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
   };
@@ -164,5 +190,75 @@ function mapCourtFeedItem(row: Record<string, unknown>): CourtFeedItem {
     publishedAt: row.published_at as string,
     isRead: row.is_read === 1,
     createdAt: row.created_at as string,
+  };
+}
+
+// ---- Legislation Update Log ----
+
+export async function addUpdateLog(log: Omit<LegislationUpdateLog, 'id' | 'timestamp'>): Promise<LegislationUpdateLog> {
+  const db = await getDatabase();
+  const id = uuid.v4() as string;
+  const now = new Date().toISOString();
+
+  await db.runAsync(
+    `INSERT INTO legislation_update_log (id, legislation_id, change_type, previous_hash, new_hash, previous_version_date, new_version_date, source_url, timestamp)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    id, log.legislationId, log.changeType,
+    log.previousHash || null, log.newHash || null,
+    log.previousVersionDate || null, log.newVersionDate || null,
+    log.sourceUrl, now
+  );
+
+  return { id, ...log, timestamp: now };
+}
+
+export async function getUpdateLogs(legislationId?: string, limit = 50): Promise<LegislationUpdateLog[]> {
+  const db = await getDatabase();
+  let query = 'SELECT * FROM legislation_update_log';
+  const params: unknown[] = [];
+
+  if (legislationId) {
+    query += ' WHERE legislation_id = ?';
+    params.push(legislationId);
+  }
+
+  query += ' ORDER BY timestamp DESC LIMIT ?';
+  params.push(limit);
+
+  const rows = await db.getAllAsync<Record<string, unknown>>(query, ...params);
+  return rows.map(mapUpdateLog);
+}
+
+export async function getLastCheckTime(): Promise<string | null> {
+  const db = await getDatabase();
+  const row = await db.getFirstAsync<{ latest: string | null }>(
+    'SELECT MAX(last_checked) as latest FROM legislation'
+  );
+  return row?.latest || null;
+}
+
+export async function getJurisdictionStats(): Promise<Record<string, number>> {
+  const db = await getDatabase();
+  const rows = await db.getAllAsync<{ jurisdiction: string; count: number }>(
+    'SELECT jurisdiction, COUNT(*) as count FROM legislation GROUP BY jurisdiction ORDER BY jurisdiction'
+  );
+  const stats: Record<string, number> = {};
+  for (const row of rows) {
+    stats[row.jurisdiction] = row.count;
+  }
+  return stats;
+}
+
+function mapUpdateLog(row: Record<string, unknown>): LegislationUpdateLog {
+  return {
+    id: row.id as string,
+    legislationId: row.legislation_id as string,
+    changeType: row.change_type as LegislationUpdateLog['changeType'],
+    previousHash: row.previous_hash as string | undefined,
+    newHash: row.new_hash as string | undefined,
+    previousVersionDate: row.previous_version_date as string | undefined,
+    newVersionDate: row.new_version_date as string | undefined,
+    sourceUrl: row.source_url as string,
+    timestamp: row.timestamp as string,
   };
 }
