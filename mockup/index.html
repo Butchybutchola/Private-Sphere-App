@@ -201,6 +201,23 @@
   /* Animations */
   @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
   .card { animation: fadeIn .3s ease; }
+
+  /* Disclaimer modal */
+  .disclaimer-overlay { position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); display:flex; align-items:center; justify-content:center; z-index:100; padding:24px; }
+  .disclaimer-box { background:#141927; border:1px solid #2A3142; border-radius:16px; padding:24px; text-align:center; max-width:340px; }
+  .disclaimer-box h3 { margin:12px 0 8px; }
+  .disclaimer-box p { color:#8892A4; font-size:12px; line-height:1.6; margin-bottom:8px; }
+
+  /* Legislation status bar */
+  .leg-status { display:flex; align-items:center; justify-content:space-between; padding:8px 16px; background:#141927; border-bottom:1px solid #2A3142; }
+  .leg-status-left { display:flex; align-items:center; gap:6px; }
+  .leg-status-left svg { width:14px; height:14px; fill:#5A6478; }
+  .leg-status-left span { color:#5A6478; font-size:10px; }
+  .leg-status-count { color:#8892A4; font-size:10px; font-weight:700; }
+
+  /* Chip with count */
+  .chip-count { background:#0A0E1A; border-radius:999px; padding:1px 6px; font-size:10px; color:#5A6478; font-weight:700; margin-left:4px; }
+  .chip.active .chip-count { background:rgba(255,255,255,0.25); color:#fff; }
 </style>
 </head>
 <body>
@@ -591,17 +608,39 @@
 
     <!-- LEGISLATION SCREEN -->
     <div class="screen" id="screen-legislation">
-      <div class="chip-row" style="padding-top:16px">
-        <div class="chip active">All</div>
-        <div class="chip">Federal</div>
-        <div class="chip">NSW</div>
-        <div class="chip">VIC</div>
-        <div class="chip">QLD</div>
-        <div class="chip">WA</div>
-        <div class="chip">SA</div>
-        <div class="chip">TAS</div>
-        <div class="chip">ACT</div>
-        <div class="chip">NT</div>
+      <!-- Disclaimer modal (shown on first visit) -->
+      <div class="disclaimer-overlay" id="leg-disclaimer" style="display:none">
+        <div class="disclaimer-box">
+          <svg viewBox="0 0 24 24" width="40" height="40"><path fill="#F5A623" d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+          <h3>Legal Disclaimer</h3>
+          <p>This is not legal advice. The legislation information provided is for reference purposes only. Laws change frequently and may not reflect the most current version.</p>
+          <p>Always verify information at the official source and consult a qualified legal professional for advice specific to your situation.</p>
+          <p>No warranties are provided regarding the accuracy, completeness, or currency of the legislation content.</p>
+          <button class="btn-primary" onclick="document.getElementById('leg-disclaimer').style.display='none'" style="margin-top:12px">I Understand</button>
+        </div>
+      </div>
+
+      <!-- Status bar -->
+      <div class="leg-status">
+        <div class="leg-status-left">
+          <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+          <span>Last updated: 15 Jan 2025, 09:30 AM</span>
+        </div>
+        <span class="leg-status-count">25 acts</span>
+      </div>
+
+      <!-- Jurisdiction chips with counts -->
+      <div class="chip-row" style="padding-top:8px">
+        <div class="chip active">All <span class="chip-count">25</span></div>
+        <div class="chip">Federal <span class="chip-count">3</span></div>
+        <div class="chip">NSW <span class="chip-count">3</span></div>
+        <div class="chip">VIC <span class="chip-count">3</span></div>
+        <div class="chip">QLD <span class="chip-count">3</span></div>
+        <div class="chip">WA <span class="chip-count">3</span></div>
+        <div class="chip">SA <span class="chip-count">2</span></div>
+        <div class="chip">TAS <span class="chip-count">2</span></div>
+        <div class="chip">ACT <span class="chip-count">2</span></div>
+        <div class="chip">NT <span class="chip-count">2</span></div>
       </div>
 
       <div class="scroll-content">
@@ -617,6 +656,7 @@
           <div style="color:#fff;font-size:16px;font-weight:700">Family Law Act</div>
           <div style="color:#8892A4;font-size:12px">Family Law Act 1975 (Cth)</div>
           <div style="color:#8892A4;font-size:14px;line-height:1.4">Primary federal legislation governing family law matters including parenting orders, property settlement, and family violence considerations.</div>
+          <div style="color:#5A6478;font-size:10px;font-style:italic;margin-top:4px">&copy; Commonwealth of Australia, CC BY 4.0</div>
           <div style="text-align:center;margin-top:4px">
             <svg viewBox="0 0 24 24" width="16" height="16"><path fill="#5A6478" d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/></svg>
           </div>
@@ -671,6 +711,12 @@
           <div style="text-align:center;margin-top:4px">
             <svg viewBox="0 0 24 24" width="16" height="16"><path fill="#5A6478" d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/></svg>
           </div>
+        </div>
+
+        <!-- Footer -->
+        <div style="text-align:center;padding:24px 0 8px;display:flex;flex-direction:column;align-items:center;gap:8px">
+          <span style="color:#5A6478;font-size:10px">Verify at official source. Pull to check for updates.</span>
+          <span style="color:#4A90D9;font-size:12px;font-weight:600;cursor:pointer" onclick="document.getElementById('leg-disclaimer').style.display='flex'">View Legal Disclaimer</span>
         </div>
       </div>
     </div>
@@ -858,6 +904,8 @@
 <script>
   const tabs = ['vault', 'capture', 'orders', 'legislation', 'courtfeed', 'settings'];
 
+  let disclaimerShown = false;
+
   function showTab(name) {
     // Hide all screens
     document.querySelectorAll('.screen').forEach(s => {
@@ -870,6 +918,12 @@
     if (screen) {
       screen.classList.add('active');
       screen.style.display = name === 'capture' ? 'flex' : 'block';
+    }
+
+    // Show disclaimer on first legislation visit
+    if (name === 'legislation' && !disclaimerShown) {
+      disclaimerShown = true;
+      document.getElementById('leg-disclaimer').style.display = 'flex';
     }
 
     // Show/hide tab bar (hide on login and detail)
