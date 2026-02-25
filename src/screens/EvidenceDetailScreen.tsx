@@ -204,6 +204,16 @@ export function EvidenceDetailScreen() {
     return `${min}:${rem.toString().padStart(2, '0')}`;
   };
 
+
+  const parsedSourceMetadata = (() => {
+    if (!evidence?.sourceMetadata) return null;
+    try {
+      return JSON.parse(evidence.sourceMetadata) as Record<string, unknown>;
+    } catch {
+      return null;
+    }
+  })();
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -345,6 +355,7 @@ export function EvidenceDetailScreen() {
         <View style={styles.metaGrid}>
           <MetaRow label="SHA-256" value={evidence.sha256Hash} mono />
           <MetaRow label="Captured (UTC)" value={format(new Date(evidence.capturedAt), 'yyyy-MM-dd HH:mm:ss')} />
+          <MetaRow label="Source Captured" value={evidence.sourceCapturedAt ? format(new Date(evidence.sourceCapturedAt), 'yyyy-MM-dd HH:mm:ss') : 'Unavailable'} />
           <MetaRow label="Device ID" value={evidence.deviceId} mono />
           <MetaRow label="GPS" value={
             evidence.latitude && evidence.longitude
@@ -358,6 +369,8 @@ export function EvidenceDetailScreen() {
           <MetaRow label="File Size" value={`${(evidence.fileSize / 1024).toFixed(2)} KB`} />
           <MetaRow label="MIME Type" value={evidence.mimeType} />
           <MetaRow label="Original" value={evidence.isOriginal ? 'Yes (Master)' : `Version ${evidence.versionNumber}`} />
+          <MetaRow label="Source File" value={String(parsedSourceMetadata?.originalFileName || 'Unavailable')} />
+          <MetaRow label="Source MIME" value={String(parsedSourceMetadata?.originalMimeType || evidence.mimeType)} />
         </View>
       </View>
 

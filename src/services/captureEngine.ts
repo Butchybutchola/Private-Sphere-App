@@ -49,10 +49,50 @@ export interface CaptureResult {
   forensicMetadata: ForensicMetadata;
 }
 
+
+interface ImportSourceMetadata {
+  originalFileName?: string;
+  originalMimeType?: string;
+  originalFileSize?: number;
+  sourceCapturedAt?: string;
+  sourceModifiedAt?: string;
+  sourceLocation?: {
+    latitude?: number;
+    longitude?: number;
+  };
+}
+
+function normalizeTimestamp(value?: number | string): string | undefined {
+  if (value === undefined || value === null) return undefined;
+  const parsed = typeof value === 'number' ? new Date(value) : new Date(String(value));
+  return Number.isNaN(parsed.getTime()) ? undefined : parsed.toISOString();
+}
+
+async function extractImportMetadata(
+  sourceUri: string,
+  mimeType: string,
+  metadata?: Partial<ImportSourceMetadata>
+): Promise<ImportSourceMetadata> {
+  const fileInfo = await FileSystem.getInfoAsync(sourceUri, { size: true });
+  const normalizedModified = normalizeTimestamp((fileInfo as { modificationTime?: number }).modificationTime
+    ? ((fileInfo as { modificationTime?: number }).modificationTime as number) * 1000
+    : undefined);
+
+  return {
+    originalFileName: metadata?.originalFileName || sourceUri.split('/').pop(),
+    originalMimeType: metadata?.originalMimeType || mimeType,
+    originalFileSize: metadata?.originalFileSize || (fileInfo as { size?: number }).size,
+    sourceCapturedAt: normalizeTimestamp(metadata?.sourceCapturedAt) || normalizedModified,
+    sourceModifiedAt: normalizeTimestamp(metadata?.sourceModifiedAt) || normalizedModified,
+    sourceLocation: metadata?.sourceLocation,
+  };
+}
+
 export async function hardenAndStoreEvidence(
   sourceUri: string,
   type: EvidenceType,
-  mimeType: string
+  mimeType: string,
+  sourceMetadata?: Partial<ImportSourceMetadata>
 ): Promise<CaptureResult> {
   await ensureEvidenceDir();
 
@@ -87,6 +127,10 @@ export async function hardenAndStoreEvidence(
   const fileInfo = await FileSystem.getInfoAsync(destUri, { size: true });
   const fileSize = (fileInfo as { size?: number }).size ?? 0;
 
+  const extractedSourceMetadata = sourceMetadata
+    ? await extractImportMetadata(sourceUri, mimeType, sourceMetadata)
+    : undefined;
+
   // Step 8: Build forensic metadata
   const forensicMetadata: ForensicMetadata = {
     sha256Hash,
@@ -98,7 +142,9 @@ export async function hardenAndStoreEvidence(
     altitude: location?.altitude ?? undefined,
     locationAccuracy: location?.accuracy ?? undefined,
     appVersion: getAppVersion(),
-    captureMethod: 'in-app',
+    captureMethod: sourceMetadata ? 'imported' : 'in-app',
+    sourceCapturedAt: extractedSourceMetadata?.sourceCapturedAt,
+    sourceMetadata: extractedSourceMetadata,
   };
 
   // Step 9: Store in database
@@ -115,6 +161,8 @@ export async function hardenAndStoreEvidence(
     longitude: location?.longitude,
     altitude: location?.altitude ?? undefined,
     locationAccuracy: location?.accuracy ?? undefined,
+    sourceCapturedAt: extractedSourceMetadata?.sourceCapturedAt,
+    sourceMetadata: extractedSourceMetadata ? JSON.stringify(extractedSourceMetadata) : undefined,
     tags: [],
     isOriginal: true,
     versionNumber: 1,
@@ -136,10 +184,11 @@ export async function hardenAndStoreEvidence(
 export async function importExternalFile(
   sourceUri: string,
   type: EvidenceType,
-  mimeType: string
+  mimeType: string,
+  sourceMetadata?: Partial<ImportSourceMetadata>
 ): Promise<CaptureResult> {
   // For imported files, same hardening but marked as imported
-  const result = await hardenAndStoreEvidence(sourceUri, type, mimeType);
+  const result = await hardenAndStoreEvidence(sourceUri, type, mimeType, sourceMetadata);
 
   // Update the forensic metadata to reflect import
   await logAuditEvent('created', 'evidence', result.evidenceId, {
