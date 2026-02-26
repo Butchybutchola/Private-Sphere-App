@@ -16,6 +16,7 @@ import { EvidenceItem, CourtOrder, BreachLog, AuditLogEntry } from '../types';
 import { logAuditEvent } from '../database/auditRepository';
 import { generateUUID } from '../utils/uuid';
 import { format } from 'date-fns';
+import { hashFile } from './hashService';
 
 const REPORTS_DIR = `${FileSystem.documentDirectory}reports/`;
 
@@ -362,7 +363,6 @@ export async function generateReport(options: ReportOptions): Promise<{
   await FileSystem.moveAsync({ from: uri, to: destPath });
 
   // Hash the report
-  const { hashFile } = require('./hashService');
   const sha256Hash = await hashFile(destPath);
 
   // Log audit event

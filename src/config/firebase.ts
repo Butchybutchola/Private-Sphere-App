@@ -1,10 +1,8 @@
 /**
  * Firebase Configuration
  *
- * Initialize Firebase services for Evidence Guardian.
- * Config values should come from environment/secure storage in production.
- *
- * SETUP: Replace the placeholder config below with your Firebase project credentials.
+ * Credentials are read from EXPO_PUBLIC_* environment variables.
+ * Copy .env.example to .env and fill in your Firebase project values.
  * Get these from: Firebase Console > Project Settings > General > Your Apps > Web App
  */
 
@@ -17,13 +15,13 @@ import { getStorage, FirebaseStorage } from 'firebase/storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const firebaseConfig = {
-  apiKey: 'AIzaSyBc_ogfELglUD-KRvCYYwgzLhrhxQyhDCI',
-  authDomain: 'evidence-guardian.firebaseapp.com',
-  projectId: 'evidence-guardian',
-  storageBucket: 'evidence-guardian.firebasestorage.app',
-  messagingSenderId: '284116413852',
-  appId: '1:284116413852:web:df6a3df4ea7d546577ac59',
-  measurementId: 'G-TPS8WBZR6C',
+  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY ?? '',
+  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN ?? '',
+  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID ?? '',
+  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET ?? '',
+  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID ?? '',
+  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID ?? '',
+  measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID ?? '',
 };
 
 let app: FirebaseApp;
@@ -67,5 +65,5 @@ export function getFirebaseStorage(): FirebaseStorage {
 }
 
 export function isFirebaseConfigured(): boolean {
-  return firebaseConfig.apiKey !== 'YOUR_API_KEY';
+  return firebaseConfig.apiKey !== '' && firebaseConfig.projectId !== '';
 }
