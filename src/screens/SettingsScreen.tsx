@@ -14,6 +14,7 @@ import { theme } from '../theme';
 import { format } from 'date-fns';
 
 const ICON_DISGUISE_KEY = 'evidence_guardian_icon_disguise';
+const BIOMETRIC_ENABLED_KEY = 'evidence_guardian_biometric_enabled';
 
 const ICON_DISGUISES = [
   { id: null, name: 'Default (Evidence Guardian)', icon: 'shield-checkmark' },
@@ -53,6 +54,10 @@ export function SettingsScreen() {
 
     const savedIcon = await SecureStore.getItemAsync(ICON_DISGUISE_KEY);
     setSelectedIcon(savedIcon || null);
+
+    const biometricPref = await SecureStore.getItemAsync(BIOMETRIC_ENABLED_KEY);
+    // Default to enabled if never set
+    setBiometricEnabled(biometricPref !== 'false');
   }
 
   const handleSyncNTP = async () => {
@@ -93,7 +98,10 @@ export function SettingsScreen() {
         </View>
         <Switch
           value={biometricEnabled}
-          onValueChange={setBiometricEnabled}
+          onValueChange={async (val) => {
+            setBiometricEnabled(val);
+            await SecureStore.setItemAsync(BIOMETRIC_ENABLED_KEY, val ? 'true' : 'false');
+          }}
           trackColor={{ true: theme.colors.primary, false: theme.colors.border }}
           disabled={!biometricAvailable}
         />

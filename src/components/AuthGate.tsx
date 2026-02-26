@@ -8,9 +8,12 @@
 import React, { useEffect, useState, ReactNode } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
+import * as SecureStore from 'expo-secure-store';
 import { Ionicons } from '@expo/vector-icons';
 import { usePanicGesture } from '../context/PanicGestureContext';
 import { theme } from '../theme';
+
+const BIOMETRIC_ENABLED_KEY = 'evidence_guardian_biometric_enabled';
 
 interface AuthGateProps {
   children: ReactNode;
@@ -47,9 +50,11 @@ export function AuthGate({ children }: AuthGateProps) {
 
     const hasHardware = await LocalAuthentication.hasHardwareAsync();
     const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+    const biometricPref = await SecureStore.getItemAsync(BIOMETRIC_ENABLED_KEY);
+    const biometricEnabled = biometricPref !== 'false'; // default on if never set
 
-    if (!hasHardware || !isEnrolled) {
-      // Allow access without biometrics if not available (dev/testing)
+    if (!hasHardware || !isEnrolled || !biometricEnabled) {
+      // Skip biometrics if hardware unavailable or user has disabled it
       setIsAuthenticated(true);
       if (isPanicLocked) unlock();
       return;
