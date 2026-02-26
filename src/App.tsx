@@ -15,6 +15,8 @@ import { LoginScreen } from './screens/LoginScreen';
 import { OnboardingScreen } from './screens/OnboardingScreen';
 import { initDatabase } from './database/db';
 import { seedLegislationData } from './database/legislationSeedData';
+import { syncNTPOffset } from './services/ntpTime';
+import { checkForUpdates } from './services/legislationUpdateService';
 import { theme } from './theme';
 
 const ONBOARDING_KEY = 'evidence_guardian_onboarded';
@@ -75,7 +77,12 @@ export default function App() {
   useEffect(() => {
     initDatabase()
       .then(() => seedLegislationData())
-      .then(() => setDbReady(true))
+      .then(() => {
+        setDbReady(true);
+        // Run non-blocking background tasks after the app is ready
+        syncNTPOffset().catch(() => {});
+        checkForUpdates().catch(() => {});
+      })
       .catch(() => setDbReady(true)); // still start app if seed fails
   }, []);
 

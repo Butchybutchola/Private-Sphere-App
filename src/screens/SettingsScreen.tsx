@@ -4,6 +4,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as LocalAuthentication from 'expo-local-authentication';
+import * as SecureStore from 'expo-secure-store';
 import { getLastSyncInfo, syncNTPOffset } from '../services/ntpTime';
 import { isEncryptionConfigured } from '../services/encryptionService';
 import { setWhisperApiKey, getWhisperApiKey } from '../services/transcriptionService';
@@ -11,6 +12,8 @@ import { getAuditLog } from '../database/auditRepository';
 import { AuditLogEntry } from '../types';
 import { theme } from '../theme';
 import { format } from 'date-fns';
+
+const ICON_DISGUISE_KEY = 'evidence_guardian_icon_disguise';
 
 const ICON_DISGUISES = [
   { id: null, name: 'Default (Evidence Guardian)', icon: 'shield-checkmark' },
@@ -47,6 +50,9 @@ export function SettingsScreen() {
 
     const key = await getWhisperApiKey();
     if (key) setWhisperKey('••••••••••••');
+
+    const savedIcon = await SecureStore.getItemAsync(ICON_DISGUISE_KEY);
+    setSelectedIcon(savedIcon || null);
   }
 
   const handleSyncNTP = async () => {
@@ -116,9 +122,10 @@ export function SettingsScreen() {
         <TouchableOpacity
           key={disguise.id ?? 'default'}
           style={[styles.disguiseOption, selectedIcon === disguise.id && styles.disguiseOptionActive]}
-          onPress={() => {
+          onPress={async () => {
             setSelectedIcon(disguise.id);
-            Alert.alert('Icon Changed', `App icon will appear as "${disguise.name}". Note: Icon changes require app restart on some devices.`);
+            await SecureStore.setItemAsync(ICON_DISGUISE_KEY, disguise.id ?? '');
+            Alert.alert('Preference Saved', `App disguise set to "${disguise.name}". Restart the app to apply the change.`);
           }}
         >
           <Ionicons
