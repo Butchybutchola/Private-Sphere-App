@@ -23,7 +23,7 @@ function rowToEvidence(row: Record<string, unknown>): EvidenceItem {
     locationAccuracy: row.location_accuracy as number | undefined,
     title: row.title as string | undefined,
     description: row.description as string | undefined,
-    tags: JSON.parse((row.tags as string) || '[]'),
+    tags: (() => { try { return JSON.parse((row.tags as string) || '[]'); } catch { return []; } })(),
     courtOrderId: row.court_order_id as string | undefined,
     breachClause: row.breach_clause as string | undefined,
     transcription: row.transcription as string | undefined,
