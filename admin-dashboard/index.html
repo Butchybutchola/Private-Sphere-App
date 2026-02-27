@@ -3,21 +3,28 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Evidence Guardian - Admin Dashboard</title>
+  <title>Evidence Guardian — Admin Dashboard</title>
   <style>
     :root {
       --bg: #0A0E1A;
       --surface: #141927;
       --surface-light: #1E2538;
+      --surface-hover: #242c40;
       --primary: #4A90D9;
+      --primary-dim: rgba(74,144,217,0.12);
       --accent: #00C9A7;
+      --accent-dim: rgba(0,201,167,0.12);
       --text: #FFFFFF;
       --text-secondary: #8892A4;
       --text-muted: #5A6478;
       --border: #2A3142;
       --danger: #E74C3C;
+      --danger-dim: rgba(231,76,60,0.12);
       --warning: #F5A623;
+      --warning-dim: rgba(245,166,35,0.12);
       --success: #27AE60;
+      --success-dim: rgba(39,174,96,0.12);
+      --radius: 10px;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -29,130 +36,222 @@
       min-height: 100vh;
     }
 
+    /* ---- Sidebar ---- */
     .sidebar {
       position: fixed;
-      left: 0;
-      top: 0;
-      bottom: 0;
-      width: 240px;
+      left: 0; top: 0; bottom: 0;
+      width: 232px;
       background: var(--surface);
       border-right: 1px solid var(--border);
-      padding: 24px 0;
+      display: flex;
+      flex-direction: column;
+      z-index: 100;
     }
 
     .sidebar-brand {
-      padding: 0 20px 24px;
+      padding: 20px;
       border-bottom: 1px solid var(--border);
-      margin-bottom: 16px;
     }
 
-    .sidebar-brand h1 {
+    .sidebar-brand .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+
+    .sidebar-brand .logo-icon {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       font-size: 16px;
-      color: var(--primary);
     }
 
-    .sidebar-brand span {
-      font-size: 11px;
-      color: var(--text-muted);
+    .sidebar-brand h1 { font-size: 15px; font-weight: 700; }
+    .sidebar-brand span { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.2px; }
+
+    .nav-section-label {
+      font-size: 10px;
       text-transform: uppercase;
-      letter-spacing: 1px;
+      letter-spacing: 1.2px;
+      color: var(--text-muted);
+      padding: 16px 20px 6px;
     }
 
     .nav-item {
       display: flex;
       align-items: center;
-      gap: 12px;
-      padding: 12px 20px;
+      gap: 10px;
+      padding: 10px 20px;
       color: var(--text-secondary);
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.15s;
       text-decoration: none;
+      font-size: 14px;
+      border-left: 3px solid transparent;
+      user-select: none;
     }
 
-    .nav-item:hover, .nav-item.active {
-      background: var(--surface-light);
-      color: var(--text);
+    .nav-item:hover { background: var(--surface-light); color: var(--text); }
+    .nav-item.active { background: var(--primary-dim); color: var(--primary); border-left-color: var(--primary); }
+
+    .nav-item .icon { width: 18px; text-align: center; font-size: 15px; }
+
+    .sidebar-footer {
+      margin-top: auto;
+      padding: 16px 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
 
-    .nav-item.active {
-      border-left: 3px solid var(--primary);
+    .admin-avatar {
+      width: 32px; height: 32px;
+      background: var(--primary-dim);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; color: var(--primary);
+      font-weight: 700;
     }
 
+    .admin-info { flex: 1; min-width: 0; }
+    .admin-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .admin-role { font-size: 11px; color: var(--text-muted); }
+
+    /* ---- Main ---- */
     .main {
-      margin-left: 240px;
-      padding: 32px;
+      margin-left: 232px;
+      padding: 28px 32px;
+      min-height: 100vh;
     }
 
+    .section { display: none; }
+    .section.active { display: block; }
+
+    /* ---- Page Header ---- */
     .page-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 32px;
+      margin-bottom: 28px;
     }
 
-    .page-header h2 {
-      font-size: 24px;
-      font-weight: 700;
-    }
+    .page-title h2 { font-size: 22px; font-weight: 700; }
+    .page-title p { font-size: 13px; color: var(--text-secondary); margin-top: 3px; }
 
+    /* ---- Buttons ---- */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 9px 18px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: opacity 0.15s, transform 0.1s;
+      white-space: nowrap;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-accent { background: var(--accent); color: #0A0E1A; }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); }
+    .btn-danger { background: var(--danger-dim); color: var(--danger); border: 1px solid rgba(231,76,60,0.3); }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+    .btn-icon { padding: 7px; border-radius: 7px; }
+
+    /* ---- Stats Grid ---- */
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 16px;
-      margin-bottom: 32px;
+      margin-bottom: 28px;
     }
 
     .stat-card {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: var(--radius);
       padding: 20px;
+      position: relative;
+      overflow: hidden;
     }
 
-    .stat-card .label {
-      font-size: 12px;
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+    }
+
+    .stat-card.blue::before { background: var(--primary); }
+    .stat-card.green::before { background: var(--accent); }
+    .stat-card.orange::before { background: var(--warning); }
+    .stat-card.red::before { background: var(--danger); }
+
+    .stat-label {
+      font-size: 11px;
       color: var(--text-muted);
       text-transform: uppercase;
       letter-spacing: 1px;
+      margin-bottom: 8px;
     }
 
-    .stat-card .value {
-      font-size: 32px;
+    .stat-value {
+      font-size: 30px;
       font-weight: 700;
-      margin: 8px 0 4px;
+      letter-spacing: -1px;
     }
 
-    .stat-card .change {
+    .stat-change {
       font-size: 12px;
+      margin-top: 6px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
     }
 
-    .stat-card .change.positive { color: var(--success); }
-    .stat-card .change.neutral { color: var(--text-muted); }
+    .stat-change.up { color: var(--success); }
+    .stat-change.down { color: var(--danger); }
+    .stat-change.neutral { color: var(--text-muted); }
 
+    /* ---- Cards ---- */
     .card {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 24px;
-      margin-bottom: 24px;
+      border-radius: var(--radius);
+      padding: 22px;
+      margin-bottom: 22px;
     }
 
-    .card h3 {
-      font-size: 16px;
-      margin-bottom: 16px;
-      color: var(--text);
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
     }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
+    .card-header h3 { font-size: 15px; font-weight: 600; }
+
+    /* ---- Chart ---- */
+    .chart-wrap { position: relative; height: 200px; }
+
+    /* ---- Tables ---- */
+    .table-wrap { overflow-x: auto; }
+
+    table { width: 100%; border-collapse: collapse; }
 
     th, td {
       text-align: left;
-      padding: 12px 16px;
+      padding: 11px 14px;
       border-bottom: 1px solid var(--border);
-      font-size: 14px;
+      font-size: 13px;
     }
 
     th {
@@ -161,297 +260,1465 @@
       text-transform: uppercase;
       letter-spacing: 1px;
       font-weight: 600;
+      white-space: nowrap;
     }
 
     td { color: var(--text-secondary); }
 
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,0.02); color: var(--text); }
+
+    /* ---- Badges ---- */
     .badge {
-      display: inline-block;
-      padding: 3px 10px;
-      border-radius: 12px;
-      font-size: 11px;
-      font-weight: 600;
-    }
-
-    .badge-active { background: rgba(39,174,96,0.15); color: var(--success); }
-    .badge-trial { background: rgba(245,166,35,0.15); color: var(--warning); }
-    .badge-expired { background: rgba(231,76,60,0.15); color: var(--danger); }
-    .badge-pro { background: rgba(74,144,217,0.15); color: var(--primary); }
-
-    .btn {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      padding: 10px 20px;
-      border-radius: 8px;
-      border: none;
-      cursor: pointer;
-      font-size: 14px;
+      gap: 4px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11px;
       font-weight: 600;
-      transition: opacity 0.2s;
+      white-space: nowrap;
     }
 
-    .btn:hover { opacity: 0.85; }
-    .btn-primary { background: var(--primary); color: #fff; }
-    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); }
+    .badge-active  { background: var(--success-dim); color: var(--success); }
+    .badge-trial   { background: var(--warning-dim); color: var(--warning); }
+    .badge-expired { background: var(--danger-dim);  color: var(--danger);  }
+    .badge-pro     { background: var(--primary-dim); color: var(--primary); }
+    .badge-legal   { background: var(--accent-dim);  color: var(--accent);  }
+    .badge-free    { background: rgba(255,255,255,0.06); color: var(--text-muted); }
+    .badge-suspended { background: var(--danger-dim); color: var(--danger); }
 
-    .section { display: none; }
-    .section.active { display: block; }
+    /* ---- Search & Filter Row ---- */
+    .filter-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
 
+    .search-box {
+      flex: 1;
+      min-width: 200px;
+      position: relative;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 9px 12px 9px 36px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .search-box input:focus { border-color: var(--primary); }
+
+    .search-box .icon {
+      position: absolute;
+      left: 11px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    select {
+      padding: 9px 14px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-secondary);
+      font-size: 13px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    select:focus { border-color: var(--primary); }
+
+    /* ---- Two-column grid ---- */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+
+    /* ---- Activity feed ---- */
+    .activity-item {
+      display: flex;
+      gap: 14px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .activity-item:last-child { border-bottom: none; }
+
+    .activity-dot {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .activity-content { flex: 1; }
+    .activity-content .title { font-size: 13px; color: var(--text); margin-bottom: 2px; }
+    .activity-content .meta { font-size: 12px; color: var(--text-muted); }
+
+    /* ---- API Key field ---- */
+    .api-key-field {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .api-key-field code {
+      flex: 1;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      color: var(--accent);
+      background: var(--bg);
+      padding: 7px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ---- Empty state ---- */
     .empty-state {
       text-align: center;
-      padding: 48px;
+      padding: 48px 24px;
       color: var(--text-muted);
     }
 
-    @media (max-width: 768px) {
-      .sidebar { display: none; }
-      .main { margin-left: 0; }
+    .empty-state .empty-icon { font-size: 36px; margin-bottom: 12px; }
+    .empty-state p { font-size: 14px; }
+
+    /* ---- Settings form ---- */
+    .settings-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .settings-row:last-child { border-bottom: none; }
+    .settings-row-label { font-size: 14px; color: var(--text); }
+    .settings-row-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+    .toggle {
+      position: relative;
+      width: 42px;
+      height: 24px;
+      cursor: pointer;
+    }
+
+    .toggle input { display: none; }
+
+    .toggle-track {
+      position: absolute;
+      inset: 0;
+      background: var(--surface-light);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      transition: background 0.2s;
+    }
+
+    .toggle input:checked + .toggle-track { background: var(--primary); border-color: var(--primary); }
+
+    .toggle-thumb {
+      position: absolute;
+      top: 3px; left: 3px;
+      width: 16px; height: 16px;
+      background: #fff;
+      border-radius: 50%;
+      transition: left 0.2s;
+    }
+
+    .toggle input:checked ~ .toggle-thumb { left: 21px; }
+
+    .text-input {
+      width: 100%;
+      padding: 10px 14px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .text-input:focus { border-color: var(--primary); }
+
+    /* ---- Modal ---- */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px;
+      width: 100%;
+      max-width: 480px;
+      margin: 20px;
+    }
+
+    .modal h3 { font-size: 17px; margin-bottom: 6px; }
+    .modal p { font-size: 13px; color: var(--text-secondary); margin-bottom: 20px; }
+
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.8px; }
+
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
+
+    /* ---- Toast ---- */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--surface-light);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 18px;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 300;
+      transform: translateY(80px);
+      opacity: 0;
+      transition: all 0.25s ease;
+      max-width: 320px;
+    }
+
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.success { border-color: rgba(39,174,96,0.4); }
+    .toast.error { border-color: rgba(231,76,60,0.4); }
+
+    /* ---- Responsive ---- */
+    @media (max-width: 1024px) {
       .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); }
+      .main { margin-left: 0; padding: 20px; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
     }
   </style>
 </head>
 <body>
-  <nav class="sidebar">
-    <div class="sidebar-brand">
+
+<!-- Sidebar -->
+<nav class="sidebar">
+  <div class="sidebar-brand">
+    <div class="logo">
+      <div class="logo-icon">🛡️</div>
       <h1>Evidence Guardian</h1>
-      <span>Admin Dashboard</span>
     </div>
-    <a class="nav-item active" data-section="dashboard" onclick="showSection('dashboard')">
-      📊 Dashboard
-    </a>
-    <a class="nav-item" data-section="users" onclick="showSection('users')">
-      👥 Users
-    </a>
-    <a class="nav-item" data-section="subscriptions" onclick="showSection('subscriptions')">
-      💳 Subscriptions
-    </a>
-    <a class="nav-item" data-section="professionals" onclick="showSection('professionals')">
-      ⚖️ Professional Portal
-    </a>
-    <a class="nav-item" data-section="audit" onclick="showSection('audit')">
-      📋 System Audit
-    </a>
-    <a class="nav-item" data-section="settings" onclick="showSection('settings')">
-      ⚙️ Settings
-    </a>
-  </nav>
+    <span>Admin Dashboard</span>
+  </div>
 
-  <main class="main">
-    <!-- Dashboard Section -->
-    <div id="dashboard" class="section active">
-      <div class="page-header">
+  <div class="nav-section-label">Overview</div>
+  <a class="nav-item active" onclick="showSection('dashboard')">
+    <span class="icon">📊</span> Dashboard
+  </a>
+
+  <div class="nav-section-label">Management</div>
+  <a class="nav-item" onclick="showSection('users')">
+    <span class="icon">👥</span> Users
+  </a>
+  <a class="nav-item" onclick="showSection('subscriptions')">
+    <span class="icon">💳</span> Subscriptions
+  </a>
+  <a class="nav-item" onclick="showSection('professionals')">
+    <span class="icon">⚖️</span> Professional Portal
+  </a>
+
+  <div class="nav-section-label">System</div>
+  <a class="nav-item" onclick="showSection('audit')">
+    <span class="icon">📋</span> Audit Log
+  </a>
+  <a class="nav-item" onclick="showSection('settings')">
+    <span class="icon">⚙️</span> Settings
+  </a>
+
+  <div class="sidebar-footer">
+    <div class="admin-avatar">A</div>
+    <div class="admin-info">
+      <div class="admin-name">Admin</div>
+      <div class="admin-role">Super Administrator</div>
+    </div>
+  </div>
+</nav>
+
+<!-- Main Content -->
+<main class="main">
+
+  <!-- ======== DASHBOARD ======== -->
+  <div id="dashboard" class="section active">
+    <div class="page-header">
+      <div class="page-title">
         <h2>Dashboard</h2>
-        <button class="btn btn-outline">Last 30 Days ▾</button>
+        <p>Platform overview — last 30 days</p>
       </div>
+      <button class="btn btn-outline" onclick="refreshDashboard()">↻ Refresh</button>
+    </div>
 
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="label">Total Users</div>
-          <div class="value">—</div>
-          <div class="change neutral">Connect backend to populate</div>
+    <div class="stats-grid">
+      <div class="stat-card blue">
+        <div class="stat-label">Total Users</div>
+        <div class="stat-value" id="stat-users">1,284</div>
+        <div class="stat-change up">▲ 12% from last month</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-label">Active Subscriptions</div>
+        <div class="stat-value" id="stat-subs">347</div>
+        <div class="stat-change up">▲ 8% from last month</div>
+      </div>
+      <div class="stat-card orange">
+        <div class="stat-label">Evidence Items</div>
+        <div class="stat-value" id="stat-evidence">24,891</div>
+        <div class="stat-change up">▲ 19% from last month</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-label">Reports Generated</div>
+        <div class="stat-value" id="stat-reports">1,063</div>
+        <div class="stat-change up">▲ 5% this month</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">
+          <h3>New Users (last 7 days)</h3>
         </div>
-        <div class="stat-card">
-          <div class="label">Active Subscriptions</div>
-          <div class="value">—</div>
-          <div class="change neutral">Connect backend to populate</div>
-        </div>
-        <div class="stat-card">
-          <div class="label">Evidence Items</div>
-          <div class="value">—</div>
-          <div class="change neutral">Across all users</div>
-        </div>
-        <div class="stat-card">
-          <div class="label">Reports Generated</div>
-          <div class="value">—</div>
-          <div class="change neutral">This month</div>
+        <div class="chart-wrap">
+          <canvas id="chartUsers"></canvas>
         </div>
       </div>
 
       <div class="card">
-        <h3>Recent Activity</h3>
-        <div class="empty-state">
-          <p>Connect to the Evidence Guardian API to view real-time activity.</p>
-          <p style="margin-top:8px;font-size:12px;">See API documentation for setup instructions.</p>
+        <div class="card-header">
+          <h3>Evidence Captured (last 7 days)</h3>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="chartEvidence"></canvas>
         </div>
       </div>
     </div>
 
-    <!-- Users Section -->
-    <div id="users" class="section">
-      <div class="page-header">
-        <h2>User Management</h2>
-        <button class="btn btn-primary">+ Add User</button>
+    <div class="card">
+      <div class="card-header">
+        <h3>Recent Activity</h3>
+        <span style="font-size:12px;color:var(--text-muted)">Live feed</span>
       </div>
+      <div id="activity-feed"></div>
+    </div>
+  </div>
 
-      <div class="card">
+  <!-- ======== USERS ======== -->
+  <div id="users" class="section">
+    <div class="page-header">
+      <div class="page-title">
+        <h2>User Management</h2>
+        <p id="user-count-label">1,284 registered users</p>
+      </div>
+      <button class="btn btn-primary" onclick="openModal('inviteUserModal')">+ Invite User</button>
+    </div>
+
+    <div class="filter-row">
+      <div class="search-box">
+        <span class="icon">🔍</span>
+        <input type="text" id="userSearch" placeholder="Search by name or email…" oninput="filterUsers()">
+      </div>
+      <select id="userPlanFilter" onchange="filterUsers()">
+        <option value="">All plans</option>
+        <option value="free">Free</option>
+        <option value="pro">Pro</option>
+        <option value="legal">Legal Pro</option>
+      </select>
+      <select id="userStatusFilter" onchange="filterUsers()">
+        <option value="">All statuses</option>
+        <option value="active">Active</option>
+        <option value="trial">Trial</option>
+        <option value="expired">Expired</option>
+        <option value="suspended">Suspended</option>
+      </select>
+      <button class="btn btn-outline btn-sm" onclick="exportUsersCSV()">⬇ Export CSV</button>
+    </div>
+
+    <div class="card" style="padding:0;overflow:hidden">
+      <div class="table-wrap">
         <table>
           <thead>
             <tr>
               <th>User</th>
-              <th>Email</th>
               <th>Plan</th>
               <th>Status</th>
-              <th>Evidence Count</th>
+              <th>Evidence</th>
+              <th>Reports</th>
               <th>Joined</th>
+              <th>Last Active</th>
               <th>Actions</th>
             </tr>
           </thead>
-          <tbody>
-            <tr>
-              <td colspan="7" style="text-align:center;color:var(--text-muted);padding:32px;">
-                Connect to backend API to manage users.
-              </td>
-            </tr>
-          </tbody>
+          <tbody id="usersTable"></tbody>
         </table>
       </div>
     </div>
+  </div>
 
-    <!-- Subscriptions Section -->
-    <div id="subscriptions" class="section">
-      <div class="page-header">
+  <!-- ======== SUBSCRIPTIONS ======== -->
+  <div id="subscriptions" class="section">
+    <div class="page-header">
+      <div class="page-title">
         <h2>Subscription Management</h2>
+        <p>Revenue and plan breakdown</p>
       </div>
+    </div>
 
-      <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr);">
-        <div class="stat-card">
-          <div class="label">Free Tier</div>
-          <div class="value" style="color:var(--text-secondary);">—</div>
-          <div class="change neutral">Up to 10 evidence items</div>
-        </div>
-        <div class="stat-card">
-          <div class="label">Pro Plan ($9.99/mo)</div>
-          <div class="value" style="color:var(--primary);">—</div>
-          <div class="change neutral">Unlimited evidence + reports</div>
-        </div>
-        <div class="stat-card">
-          <div class="label">Legal Pro ($29.99/mo)</div>
-          <div class="value" style="color:var(--accent);">—</div>
-          <div class="change neutral">Multi-user + API access</div>
-        </div>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Free Tier</div>
+        <div class="stat-value" style="color:var(--text-secondary)">937</div>
+        <div class="stat-change neutral">Up to 10 evidence items</div>
       </div>
+      <div class="stat-card blue">
+        <div class="stat-label">Pro — $9.99/mo</div>
+        <div class="stat-value" style="color:var(--primary)">289</div>
+        <div class="stat-change up">▲ 6% MoM — $2,887/mo</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-label">Legal Pro — $29.99/mo</div>
+        <div class="stat-value" style="color:var(--accent)">58</div>
+        <div class="stat-change up">▲ 15% MoM — $1,739/mo</div>
+      </div>
+      <div class="stat-card orange">
+        <div class="stat-label">Monthly Revenue</div>
+        <div class="stat-value">$4,626</div>
+        <div class="stat-change up">▲ 9% MoM</div>
+      </div>
+    </div>
 
+    <div class="grid-2">
       <div class="card">
-        <h3>Subscription History</h3>
-        <div class="empty-state">
-          <p>Payment processing integration required.</p>
-          <p style="margin-top:8px;font-size:12px;">Recommended: Stripe or RevenueCat for mobile subscriptions.</p>
+        <div class="card-header"><h3>Revenue (last 6 months)</h3></div>
+        <div class="chart-wrap">
+          <canvas id="chartRevenue"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>Plan Distribution</h3></div>
+        <div class="chart-wrap">
+          <canvas id="chartPlans"></canvas>
         </div>
       </div>
     </div>
 
-    <!-- Professional Portal Section -->
-    <div id="professionals" class="section">
-      <div class="page-header">
-        <h2>Professional Portal</h2>
-        <button class="btn btn-primary">+ Invite Firm</button>
+    <div class="card">
+      <div class="card-header">
+        <h3>Recent Subscription Events</h3>
+        <button class="btn btn-outline btn-sm" onclick="exportSubsCSV()">⬇ Export CSV</button>
       </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>User</th>
+              <th>Event</th>
+              <th>Plan</th>
+              <th>Amount</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="subsTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
-      <div class="card">
-        <h3>Legal Firm Access</h3>
-        <p style="color:var(--text-secondary);margin-bottom:16px;">
-          Manage legal firms that have API access to receive evidence reports from their clients.
-        </p>
+  <!-- ======== PROFESSIONAL PORTAL ======== -->
+  <div id="professionals" class="section">
+    <div class="page-header">
+      <div class="page-title">
+        <h2>Professional Portal</h2>
+        <p>Legal firms with API access to receive client evidence</p>
+      </div>
+      <button class="btn btn-accent" onclick="openModal('inviteFirmModal')">+ Invite Firm</button>
+    </div>
+
+    <div class="stats-grid" style="grid-template-columns:repeat(3,1fr)">
+      <div class="stat-card blue">
+        <div class="stat-label">Registered Firms</div>
+        <div class="stat-value" id="stat-firms">0</div>
+        <div class="stat-change neutral">Legal firms with API access</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-label">Connected Clients</div>
+        <div class="stat-value" id="stat-firm-clients">0</div>
+        <div class="stat-change neutral">Users linked to a firm</div>
+      </div>
+      <div class="stat-card orange">
+        <div class="stat-label">API Calls (30d)</div>
+        <div class="stat-value" id="stat-api-calls">0</div>
+        <div class="stat-change neutral">Evidence transfers</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h3>Registered Legal Firms</h3>
+      </div>
+      <div class="table-wrap">
         <table>
           <thead>
             <tr>
               <th>Firm Name</th>
+              <th>Contact</th>
               <th>API Key</th>
               <th>Status</th>
-              <th>Connected Users</th>
-              <th>Last Activity</th>
+              <th>Clients</th>
+              <th>API Calls</th>
+              <th>Registered</th>
               <th>Actions</th>
             </tr>
           </thead>
-          <tbody>
-            <tr>
-              <td colspan="6" style="text-align:center;color:var(--text-muted);padding:32px;">
-                No legal firms connected. Use "Invite Firm" to generate API access.
-              </td>
-            </tr>
-          </tbody>
+          <tbody id="firmsTable"></tbody>
         </table>
       </div>
+      <div id="firmsEmptyState" class="empty-state" style="display:none">
+        <div class="empty-icon">⚖️</div>
+        <p>No legal firms registered yet.</p>
+        <p style="margin-top:8px;font-size:12px">Use "Invite Firm" to send an invitation and generate API credentials.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======== AUDIT LOG ======== -->
+  <div id="audit" class="section">
+    <div class="page-header">
+      <div class="page-title">
+        <h2>System Audit Log</h2>
+        <p>All admin and system actions are logged here</p>
+      </div>
+      <button class="btn btn-outline" onclick="exportAuditCSV()">⬇ Export CSV</button>
     </div>
 
-    <!-- System Audit Section -->
-    <div id="audit" class="section">
-      <div class="page-header">
-        <h2>System Audit Log</h2>
-        <button class="btn btn-outline">Export CSV</button>
+    <div class="filter-row">
+      <div class="search-box">
+        <span class="icon">🔍</span>
+        <input type="text" id="auditSearch" placeholder="Search events…" oninput="filterAudit()">
       </div>
+      <select id="auditActionFilter" onchange="filterAudit()">
+        <option value="">All actions</option>
+        <option value="login">Login</option>
+        <option value="evidence">Evidence</option>
+        <option value="report">Report</option>
+        <option value="user">User</option>
+        <option value="subscription">Subscription</option>
+        <option value="api">API</option>
+      </select>
+    </div>
 
-      <div class="card">
+    <div class="card" style="padding:0;overflow:hidden">
+      <div class="table-wrap">
         <table>
           <thead>
             <tr>
               <th>Timestamp</th>
-              <th>User</th>
+              <th>Actor</th>
               <th>Action</th>
               <th>Resource</th>
               <th>Details</th>
+              <th>IP</th>
             </tr>
           </thead>
-          <tbody>
-            <tr>
-              <td colspan="5" style="text-align:center;color:var(--text-muted);padding:32px;">
-                Connect to the Evidence Guardian API to view system-wide audit logs.
-              </td>
-            </tr>
-          </tbody>
+          <tbody id="auditTable"></tbody>
         </table>
       </div>
     </div>
+  </div>
 
-    <!-- Settings Section -->
-    <div id="settings" class="section">
-      <div class="page-header">
+  <!-- ======== SETTINGS ======== -->
+  <div id="settings" class="section">
+    <div class="page-header">
+      <div class="page-title">
         <h2>System Settings</h2>
+        <p>Configure the admin dashboard and platform defaults</p>
       </div>
+      <button class="btn btn-primary" onclick="saveSettings()">Save Changes</button>
+    </div>
 
-      <div class="card">
-        <h3>API Configuration</h3>
-        <p style="color:var(--text-secondary);margin-bottom:16px;">
-          Configure the backend API endpoint for the admin dashboard.
-        </p>
-        <div style="display:flex;gap:12px;align-items:center;">
-          <input type="text" placeholder="https://api.evidenceguardian.com"
-            style="flex:1;padding:10px 14px;background:var(--bg);border:1px solid var(--border);
-            border-radius:8px;color:var(--text);font-size:14px;" />
-          <button class="btn btn-primary">Save</button>
+    <div class="card">
+      <div class="card-header"><h3>API Configuration</h3></div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-row-label">Backend API URL</div>
+          <div class="settings-row-desc">The Evidence Guardian backend API endpoint</div>
         </div>
+        <input type="text" id="settingApiUrl" class="text-input" style="width:320px"
+          placeholder="https://api.evidenceguardian.com">
       </div>
-
-      <div class="card">
-        <h3>Security Settings</h3>
-        <div style="display:flex;flex-direction:column;gap:16px;">
-          <label style="display:flex;justify-content:space-between;align-items:center;">
-            <span>Require 2FA for admin access</span>
-            <input type="checkbox" checked />
-          </label>
-          <label style="display:flex;justify-content:space-between;align-items:center;">
-            <span>Enable IP whitelisting</span>
-            <input type="checkbox" />
-          </label>
-          <label style="display:flex;justify-content:space-between;align-items:center;">
-            <span>Auto-logout after inactivity (minutes)</span>
-            <input type="number" value="30"
-              style="width:80px;padding:6px;background:var(--bg);border:1px solid var(--border);
-              border-radius:6px;color:var(--text);text-align:center;" />
-          </label>
+      <div class="settings-row">
+        <div>
+          <div class="settings-row-label">Admin API Key</div>
+          <div class="settings-row-desc">Used to authenticate admin dashboard requests</div>
         </div>
+        <input type="password" id="settingApiKey" class="text-input" style="width:320px"
+          placeholder="eg_admin_••••••••••••••••">
       </div>
     </div>
-  </main>
 
-  <script>
-    function showSection(id) {
-      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-      document.getElementById(id).classList.add('active');
-      document.querySelector(`[data-section="${id}"]`).classList.add('active');
-    }
-  </script>
+    <div class="card">
+      <div class="card-header"><h3>Security Settings</h3></div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-row-label">Require 2FA for admin access</div>
+          <div class="settings-row-desc">All admin logins require a TOTP code</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="setting2fa" checked>
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-row-label">Enable IP whitelisting</div>
+          <div class="settings-row-desc">Restrict admin access to specific IP ranges</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="settingIpWhitelist">
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-row-label">Session timeout (minutes)</div>
+          <div class="settings-row-desc">Automatically log out after inactivity</div>
+        </div>
+        <input type="number" id="settingTimeout" value="30" min="5" max="480"
+          style="width:80px;padding:8px;background:var(--bg);border:1px solid var(--border);border-radius:7px;color:var(--text);text-align:center;font-size:13px;">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h3>Platform Defaults</h3></div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-row-label">Free tier evidence limit</div>
+          <div class="settings-row-desc">Maximum evidence items for free users</div>
+        </div>
+        <input type="number" id="settingFreeLimit" value="10" min="1" max="100"
+          style="width:80px;padding:8px;background:var(--bg);border:1px solid var(--border);border-radius:7px;color:var(--text);text-align:center;font-size:13px;">
+      </div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-row-label">Allow new registrations</div>
+          <div class="settings-row-desc">Toggle public sign-up on or off</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="settingRegistrations" checked>
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-row-label">Maintenance mode</div>
+          <div class="settings-row-desc">Shows a maintenance notice in the mobile app</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="settingMaintenance">
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ======== MODALS ======== -->
+
+<!-- Invite User Modal -->
+<div class="modal-overlay" id="inviteUserModal">
+  <div class="modal">
+    <h3>Invite User</h3>
+    <p>Send an invitation email to a new user.</p>
+    <div class="form-group">
+      <label>Full Name</label>
+      <input type="text" class="text-input" id="inviteUserName" placeholder="Jane Smith">
+    </div>
+    <div class="form-group">
+      <label>Email Address</label>
+      <input type="email" class="text-input" id="inviteUserEmail" placeholder="jane@example.com">
+    </div>
+    <div class="form-group">
+      <label>Initial Plan</label>
+      <select class="text-input" id="inviteUserPlan" style="width:100%">
+        <option value="free">Free</option>
+        <option value="pro">Pro ($9.99/mo)</option>
+        <option value="legal">Legal Pro ($29.99/mo)</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('inviteUserModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="inviteUser()">Send Invitation</button>
+    </div>
+  </div>
+</div>
+
+<!-- Invite Firm Modal -->
+<div class="modal-overlay" id="inviteFirmModal">
+  <div class="modal">
+    <h3>Register Legal Firm</h3>
+    <p>Generate API credentials for a legal firm to receive client evidence.</p>
+    <div class="form-group">
+      <label>Firm Name</label>
+      <input type="text" class="text-input" id="firmName" placeholder="Smith & Partners Family Law">
+    </div>
+    <div class="form-group">
+      <label>Contact Name</label>
+      <input type="text" class="text-input" id="firmContact" placeholder="John Smith">
+    </div>
+    <div class="form-group">
+      <label>Contact Email</label>
+      <input type="email" class="text-input" id="firmEmail" placeholder="admin@smithpartners.com.au">
+    </div>
+    <div class="form-group">
+      <label>Jurisdiction</label>
+      <select class="text-input" id="firmJurisdiction" style="width:100%">
+        <option value="NSW">New South Wales</option>
+        <option value="VIC">Victoria</option>
+        <option value="QLD">Queensland</option>
+        <option value="WA">Western Australia</option>
+        <option value="SA">South Australia</option>
+        <option value="Federal">Federal</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('inviteFirmModal')">Cancel</button>
+      <button class="btn btn-accent" onclick="registerFirm()">Generate API Key</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// DATA LAYER — mock data (replace with real API calls)
+// ============================================================
+
+const USERS = [
+  { id:'u001', name:'Sarah Mitchell',  email:'sarah.m@example.com',   plan:'pro',   status:'active',    evidence:142, reports:23, joined:'2024-08-12', lastActive:'2026-02-25' },
+  { id:'u002', name:'Emma Thompson',   email:'emma.t@example.com',    plan:'legal', status:'active',    evidence:89,  reports:41, joined:'2024-09-03', lastActive:'2026-02-26' },
+  { id:'u003', name:'Jessica Brown',   email:'jess.b@example.com',    plan:'free',  status:'trial',     evidence:7,   reports:1,  joined:'2026-02-20', lastActive:'2026-02-24' },
+  { id:'u004', name:'Aisha Patel',     email:'aisha.p@example.com',   plan:'pro',   status:'active',    evidence:203, reports:18, joined:'2024-11-17', lastActive:'2026-02-22' },
+  { id:'u005', name:'Grace Liu',       email:'grace.l@example.com',   plan:'legal', status:'active',    evidence:55,  reports:67, joined:'2025-01-05', lastActive:'2026-02-26' },
+  { id:'u006', name:'Rebecca Nguyen',  email:'rebecca.n@example.com', plan:'pro',   status:'active',    evidence:318, reports:29, joined:'2024-07-30', lastActive:'2026-02-21' },
+  { id:'u007', name:'Chloe Wilson',    email:'chloe.w@example.com',   plan:'free',  status:'expired',   evidence:10,  reports:0,  joined:'2025-06-14', lastActive:'2025-09-10' },
+  { id:'u008', name:'Mia Anderson',    email:'mia.a@example.com',     plan:'pro',   status:'active',    evidence:76,  reports:12, joined:'2025-03-22', lastActive:'2026-02-25' },
+  { id:'u009', name:'Zoe Harris',      email:'zoe.h@example.com',     plan:'free',  status:'active',    evidence:4,   reports:0,  joined:'2026-02-10', lastActive:'2026-02-18' },
+  { id:'u010', name:'Sophie Martin',   email:'sophie.m@example.com',  plan:'pro',   status:'suspended', evidence:91,  reports:8,  joined:'2024-12-01', lastActive:'2026-01-15' },
+];
+
+const SUBSCRIPTIONS_EVENTS = [
+  { date:'2026-02-26', user:'Emma Thompson',  event:'Renewal',  plan:'Legal Pro', amount:'$29.99', status:'paid' },
+  { date:'2026-02-25', user:'Sarah Mitchell', event:'Renewal',  plan:'Pro',       amount:'$9.99',  status:'paid' },
+  { date:'2026-02-24', user:'Jessica Brown',  event:'New Sub',  plan:'Free Trial',amount:'$0.00',  status:'trial' },
+  { date:'2026-02-23', user:'Aisha Patel',    event:'Upgrade',  plan:'Pro → Legal Pro', amount:'$19.99', status:'paid' },
+  { date:'2026-02-22', user:'Mia Anderson',   event:'Renewal',  plan:'Pro',       amount:'$9.99',  status:'paid' },
+  { date:'2026-02-20', user:'Chloe Wilson',   event:'Expired',  plan:'Pro',       amount:'$0.00',  status:'expired' },
+  { date:'2026-02-18', user:'Rebecca Nguyen', event:'Renewal',  plan:'Pro',       amount:'$9.99',  status:'paid' },
+  { date:'2026-02-15', user:'Grace Liu',      event:'Renewal',  plan:'Legal Pro', amount:'$29.99', status:'paid' },
+];
+
+const AUDIT_EVENTS = [
+  { ts:'2026-02-26 14:32:11', actor:'admin',          action:'user',         resource:'u010',         details:'Suspended account: ToS violation',     ip:'203.0.113.1' },
+  { ts:'2026-02-26 11:17:44', actor:'system',         action:'evidence',     resource:'u006',         details:'Evidence integrity check passed (318 items)', ip:'—' },
+  { ts:'2026-02-26 09:05:02', actor:'sarah.m',        action:'login',        resource:'App login',    details:'Biometric auth success',               ip:'101.167.22.41' },
+  { ts:'2026-02-25 22:41:18', actor:'emma.t',         action:'report',       resource:'RPT-2026-089', details:'PDF report generated (42 items)',      ip:'49.195.104.88' },
+  { ts:'2026-02-25 18:33:55', actor:'system',         action:'subscription', resource:'u004',         details:'Plan upgrade: Pro → Legal Pro',         ip:'—' },
+  { ts:'2026-02-25 15:22:30', actor:'aisha.p',        action:'evidence',     resource:'EV-14872',     details:'Photo evidence captured & hashed',     ip:'110.32.67.9' },
+  { ts:'2026-02-25 12:08:17', actor:'admin',          action:'user',         resource:'u003',         details:'Trial period extended by 7 days',       ip:'203.0.113.1' },
+  { ts:'2026-02-24 20:55:04', actor:'grace.l',        action:'api',          resource:'API-POST /evidence', details:'Firm API: evidence package delivered', ip:'192.0.2.88' },
+  { ts:'2026-02-24 16:40:29', actor:'system',         action:'login',        resource:'Admin panel',  details:'Admin session started',                ip:'203.0.113.1' },
+  { ts:'2026-02-23 10:14:50', actor:'mia.a',          action:'report',       resource:'RPT-2026-088', details:'PDF report generated (12 items)',      ip:'61.9.32.44' },
+];
+
+// Firms stored in localStorage
+function getFirms() {
+  try { return JSON.parse(localStorage.getItem('eg_firms') || '[]'); }
+  catch { return []; }
+}
+function saveFirms(firms) {
+  localStorage.setItem('eg_firms', JSON.stringify(firms));
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelector(`[onclick="showSection('${id}')"]`).classList.add('active');
+
+  // Lazy-render charts on first view
+  if (id === 'dashboard') renderDashboardCharts();
+  if (id === 'subscriptions') renderSubscriptionCharts();
+  if (id === 'professionals') renderFirmsTable();
+  if (id === 'users') renderUsersTable(USERS);
+  if (id === 'audit') renderAuditTable(AUDIT_EVENTS);
+  if (id === 'settings') loadSettings();
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+
+let dashChartsRendered = false;
+
+function renderDashboardCharts() {
+  if (dashChartsRendered) return;
+  dashChartsRendered = true;
+
+  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  drawBarChart('chartUsers',    days, [14, 22, 18, 31, 27, 9, 19], '#4A90D9');
+  drawBarChart('chartEvidence', days, [210, 384, 312, 541, 476, 118, 293], '#00C9A7');
+
+  renderActivityFeed();
+}
+
+function refreshDashboard() {
+  dashChartsRendered = false;
+  renderDashboardCharts();
+  showToast('Dashboard refreshed', 'success');
+}
+
+const ACTIVITY_DATA = [
+  { icon:'📸', bg:'var(--primary-dim)', color:'var(--primary)',  title:'New evidence captured', meta:'u006 (Rebecca Nguyen) · 2 min ago' },
+  { icon:'📄', bg:'var(--accent-dim)',  color:'var(--accent)',   title:'PDF report generated',  meta:'u002 (Emma Thompson) · 8 min ago' },
+  { icon:'👤', bg:'rgba(255,255,255,0.05)', color:'var(--text-secondary)', title:'New user registered', meta:'zoe.h@example.com · 22 min ago' },
+  { icon:'💳', bg:'var(--success-dim)', color:'var(--success)', title:'Subscription renewed',   meta:'u005 (Grace Liu) · 41 min ago' },
+  { icon:'🔒', bg:'var(--warning-dim)', color:'var(--warning)', title:'Biometric auth success', meta:'u001 (Sarah Mitchell) · 1h ago' },
+  { icon:'⚖️', bg:'var(--accent-dim)',  color:'var(--accent)',   title:'Firm API: evidence delivered', meta:'Smith & Partners · 2h ago' },
+];
+
+function renderActivityFeed() {
+  const feed = document.getElementById('activity-feed');
+  feed.innerHTML = ACTIVITY_DATA.map(item => `
+    <div class="activity-item">
+      <div class="activity-dot" style="background:${item.bg};color:${item.color}">${item.icon}</div>
+      <div class="activity-content">
+        <div class="title">${item.title}</div>
+        <div class="meta">${item.meta}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ============================================================
+// CHARTS — Canvas API (no external dependencies)
+// ============================================================
+
+function drawBarChart(canvasId, labels, values, color) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width  = rect.width  * dpr;
+  canvas.height = rect.height * dpr;
+  canvas.style.width  = rect.width  + 'px';
+  canvas.style.height = rect.height + 'px';
+  ctx.scale(dpr, dpr);
+
+  const W = rect.width, H = rect.height;
+  const pad = { top: 16, right: 16, bottom: 36, left: 44 };
+  const cW = W - pad.left - pad.right;
+  const cH = H - pad.top  - pad.bottom;
+  const max = Math.max(...values);
+  const barW = (cW / values.length) * 0.55;
+  const gap   = cW / values.length;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Grid lines
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.top + cH - (cH * i / 4);
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
+    ctx.fillStyle = '#5A6478';
+    ctx.font = '10px -apple-system,sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(Math.round(max * i / 4), pad.left - 6, y + 4);
+  }
+
+  // Bars
+  values.forEach((v, i) => {
+    const x = pad.left + gap * i + (gap - barW) / 2;
+    const bH = (v / max) * cH;
+    const y  = pad.top + cH - bH;
+
+    // Gradient fill
+    const grad = ctx.createLinearGradient(0, y, 0, y + bH);
+    grad.addColorStop(0, color);
+    grad.addColorStop(1, color + '44');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.roundRect(x, y, barW, bH, [4, 4, 0, 0]);
+    ctx.fill();
+
+    // Label
+    ctx.fillStyle = '#5A6478';
+    ctx.font = '11px -apple-system,sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(labels[i], x + barW / 2, H - pad.bottom + 16);
+  });
+}
+
+function drawDonutChart(canvasId, labels, values, colors) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width  = rect.width  * dpr;
+  canvas.height = rect.height * dpr;
+  canvas.style.width  = rect.width  + 'px';
+  canvas.style.height = rect.height + 'px';
+  ctx.scale(dpr, dpr);
+
+  const W = rect.width, H = rect.height;
+  const cx = W * 0.38, cy = H / 2;
+  const outerR = Math.min(cx, cy) - 16;
+  const innerR = outerR * 0.6;
+  const total = values.reduce((a, b) => a + b, 0);
+  let angle = -Math.PI / 2;
+
+  ctx.clearRect(0, 0, W, H);
+
+  values.forEach((v, i) => {
+    const slice = (v / total) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, outerR, angle, angle + slice);
+    ctx.closePath();
+    ctx.fillStyle = colors[i];
+    ctx.fill();
+    angle += slice;
+  });
+
+  // Hole
+  ctx.beginPath();
+  ctx.arc(cx, cy, innerR, 0, Math.PI * 2);
+  ctx.fillStyle = '#141927';
+  ctx.fill();
+
+  // Center text
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = 'bold 20px -apple-system,sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(total.toLocaleString(), cx, cy + 4);
+  ctx.fillStyle = '#5A6478';
+  ctx.font = '11px -apple-system,sans-serif';
+  ctx.fillText('total', cx, cy + 18);
+
+  // Legend
+  const legendX = W * 0.62, legendY = cy - (labels.length * 24) / 2;
+  labels.forEach((label, i) => {
+    const y = legendY + i * 26;
+    ctx.fillStyle = colors[i];
+    ctx.beginPath();
+    ctx.roundRect(legendX, y, 12, 12, 3);
+    ctx.fill();
+    ctx.fillStyle = '#8892A4';
+    ctx.font = '12px -apple-system,sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(`${label} (${values[i]})`, legendX + 18, y + 10);
+  });
+}
+
+function drawLineChart(canvasId, labels, datasets) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width  = rect.width  * dpr;
+  canvas.height = rect.height * dpr;
+  canvas.style.width  = rect.width  + 'px';
+  canvas.style.height = rect.height + 'px';
+  ctx.scale(dpr, dpr);
+
+  const W = rect.width, H = rect.height;
+  const pad = { top: 16, right: 16, bottom: 36, left: 60 };
+  const cW = W - pad.left - pad.right;
+  const cH = H - pad.top  - pad.bottom;
+  const allVals = datasets.flatMap(d => d.values);
+  const max = Math.max(...allVals) * 1.1;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.top + cH - (cH * i / 4);
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
+    ctx.fillStyle = '#5A6478';
+    ctx.font = '10px -apple-system,sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText('$' + Math.round(max * i / 4).toLocaleString(), pad.left - 6, y + 4);
+  }
+
+  // Lines
+  datasets.forEach(ds => {
+    const pts = ds.values.map((v, i) => ({
+      x: pad.left + (cW / (labels.length - 1)) * i,
+      y: pad.top + cH - (v / max) * cH,
+    }));
+
+    // Area fill
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pad.top + cH);
+    pts.forEach(p => ctx.lineTo(p.x, p.y));
+    ctx.lineTo(pts[pts.length - 1].x, pad.top + cH);
+    ctx.closePath();
+    ctx.fillStyle = ds.color + '22';
+    ctx.fill();
+
+    // Line
+    ctx.beginPath();
+    pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+    ctx.strokeStyle = ds.color;
+    ctx.lineWidth = 2.5;
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+
+    // Dots
+    pts.forEach(p => {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+      ctx.fillStyle = ds.color;
+      ctx.fill();
+      ctx.strokeStyle = '#141927';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    });
+  });
+
+  // X labels
+  labels.forEach((label, i) => {
+    const x = pad.left + (cW / (labels.length - 1)) * i;
+    ctx.fillStyle = '#5A6478';
+    ctx.font = '11px -apple-system,sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(label, x, H - pad.bottom + 16);
+  });
+}
+
+// ============================================================
+// USERS TABLE
+// ============================================================
+
+function planBadge(plan) {
+  if (plan === 'pro')   return '<span class="badge badge-pro">Pro</span>';
+  if (plan === 'legal') return '<span class="badge badge-legal">Legal Pro</span>';
+  return '<span class="badge badge-free">Free</span>';
+}
+
+function statusBadge(status) {
+  const map = {
+    active:    '<span class="badge badge-active">Active</span>',
+    trial:     '<span class="badge badge-trial">Trial</span>',
+    expired:   '<span class="badge badge-expired">Expired</span>',
+    suspended: '<span class="badge badge-suspended">Suspended</span>',
+  };
+  return map[status] || status;
+}
+
+function renderUsersTable(users) {
+  const tbody = document.getElementById('usersTable');
+  if (!users.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:32px">No users found.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = users.map(u => `
+    <tr>
+      <td>
+        <div style="font-weight:600;color:var(--text)">${u.name}</div>
+        <div style="font-size:12px;color:var(--text-muted)">${u.email}</div>
+      </td>
+      <td>${planBadge(u.plan)}</td>
+      <td>${statusBadge(u.status)}</td>
+      <td>${u.evidence.toLocaleString()}</td>
+      <td>${u.reports}</td>
+      <td>${u.joined}</td>
+      <td>${u.lastActive}</td>
+      <td>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-outline btn-sm btn-icon" title="View user" onclick="viewUser('${u.id}')">👁</button>
+          ${u.status !== 'suspended'
+            ? `<button class="btn btn-danger btn-sm btn-icon" title="Suspend" onclick="suspendUser('${u.id}')">🚫</button>`
+            : `<button class="btn btn-outline btn-sm btn-icon" title="Reinstate" onclick="reinstateUser('${u.id}')">✅</button>`}
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function filterUsers() {
+  const query  = document.getElementById('userSearch').value.toLowerCase();
+  const plan   = document.getElementById('userPlanFilter').value;
+  const status = document.getElementById('userStatusFilter').value;
+  const filtered = USERS.filter(u =>
+    (!query  || u.name.toLowerCase().includes(query) || u.email.toLowerCase().includes(query)) &&
+    (!plan   || u.plan === plan) &&
+    (!status || u.status === status)
+  );
+  document.getElementById('user-count-label').textContent =
+    `${filtered.length} of ${USERS.length} users`;
+  renderUsersTable(filtered);
+}
+
+function viewUser(id) {
+  const u = USERS.find(u => u.id === id);
+  if (u) showToast(`Viewing ${u.name} — full detail view coming soon.`, 'success');
+}
+
+function suspendUser(id) {
+  const u = USERS.find(u => u.id === id);
+  if (u && confirm(`Suspend ${u.name}? They will lose access to the app.`)) {
+    u.status = 'suspended';
+    filterUsers();
+    showToast(`${u.name} suspended.`, 'success');
+  }
+}
+
+function reinstateUser(id) {
+  const u = USERS.find(u => u.id === id);
+  if (u) {
+    u.status = 'active';
+    filterUsers();
+    showToast(`${u.name} reinstated.`, 'success');
+  }
+}
+
+function exportUsersCSV() {
+  const headers = ['Name','Email','Plan','Status','Evidence','Reports','Joined','Last Active'];
+  const rows = USERS.map(u => [u.name, u.email, u.plan, u.status, u.evidence, u.reports, u.joined, u.lastActive]);
+  downloadCSV('users.csv', [headers, ...rows]);
+}
+
+// ============================================================
+// SUBSCRIPTIONS
+// ============================================================
+
+let subChartsRendered = false;
+
+function renderSubscriptionCharts() {
+  if (subChartsRendered) return;
+  subChartsRendered = true;
+
+  const months = ['Sep','Oct','Nov','Dec','Jan','Feb'];
+  drawLineChart('chartRevenue', months, [
+    { label:'Revenue', values:[2980, 3210, 3540, 3820, 4280, 4626], color:'#4A90D9' },
+  ]);
+  drawDonutChart('chartPlans', ['Free','Pro','Legal Pro'], [937, 289, 58], ['#2A3142','#4A90D9','#00C9A7']);
+
+  renderSubsTable();
+}
+
+function renderSubsTable() {
+  const tbody = document.getElementById('subsTable');
+  tbody.innerHTML = SUBSCRIPTIONS_EVENTS.map(e => {
+    const statusBg = e.status === 'paid' ? 'badge-active' : e.status === 'trial' ? 'badge-trial' : 'badge-expired';
+    return `
+      <tr>
+        <td>${e.date}</td>
+        <td style="color:var(--text)">${e.user}</td>
+        <td>${e.event}</td>
+        <td>${e.plan}</td>
+        <td style="color:var(--accent);font-weight:600">${e.amount}</td>
+        <td><span class="badge ${statusBg}">${e.status}</span></td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function exportSubsCSV() {
+  const headers = ['Date','User','Event','Plan','Amount','Status'];
+  const rows = SUBSCRIPTIONS_EVENTS.map(e => [e.date, e.user, e.event, e.plan, e.amount, e.status]);
+  downloadCSV('subscriptions.csv', [headers, ...rows]);
+}
+
+// ============================================================
+// PROFESSIONAL PORTAL
+// ============================================================
+
+function renderFirmsTable() {
+  const firms = getFirms();
+  const tbody = document.getElementById('firmsTable');
+  const emptyState = document.getElementById('firmsEmptyState');
+
+  document.getElementById('stat-firms').textContent = firms.length;
+  const totalClients = firms.reduce((a, f) => a + (f.clients || 0), 0);
+  const totalCalls   = firms.reduce((a, f) => a + (f.apiCalls || 0), 0);
+  document.getElementById('stat-firm-clients').textContent = totalClients;
+  document.getElementById('stat-api-calls').textContent = totalCalls.toLocaleString();
+
+  if (!firms.length) {
+    tbody.innerHTML = '';
+    emptyState.style.display = 'block';
+    return;
+  }
+
+  emptyState.style.display = 'none';
+  tbody.innerHTML = firms.map(f => `
+    <tr>
+      <td style="color:var(--text);font-weight:600">${f.name}</td>
+      <td>
+        <div>${f.contact}</div>
+        <div style="font-size:12px;color:var(--text-muted)">${f.email}</div>
+      </td>
+      <td>
+        <div class="api-key-field">
+          <code>${f.apiKey.substring(0, 20)}…</code>
+          <button class="btn btn-outline btn-sm btn-icon" title="Copy key" onclick="copyApiKey('${f.apiKey}')">📋</button>
+        </div>
+      </td>
+      <td><span class="badge badge-active">Active</span></td>
+      <td>${f.clients || 0}</td>
+      <td>${(f.apiCalls || 0).toLocaleString()}</td>
+      <td>${f.registered}</td>
+      <td>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-danger btn-sm" onclick="revokeFirm('${f.id}')">Revoke</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function registerFirm() {
+  const name  = document.getElementById('firmName').value.trim();
+  const contact = document.getElementById('firmContact').value.trim();
+  const email = document.getElementById('firmEmail').value.trim();
+  const jurisdiction = document.getElementById('firmJurisdiction').value;
+
+  if (!name || !contact || !email) {
+    showToast('Please fill in all fields.', 'error'); return;
+  }
+
+  const apiKey = 'eg_firm_' + generateToken(32);
+  const firms = getFirms();
+  firms.push({
+    id: 'f' + Date.now(),
+    name, contact, email, jurisdiction,
+    apiKey,
+    clients: 0,
+    apiCalls: 0,
+    registered: new Date().toISOString().split('T')[0],
+  });
+  saveFirms(firms);
+  closeModal('inviteFirmModal');
+  clearModal('inviteFirmModal');
+  renderFirmsTable();
+  showToast(`${name} registered. API key generated.`, 'success');
+}
+
+function revokeFirm(id) {
+  if (!confirm('Revoke API access for this firm? This cannot be undone.')) return;
+  const firms = getFirms().filter(f => f.id !== id);
+  saveFirms(firms);
+  renderFirmsTable();
+  showToast('API access revoked.', 'success');
+}
+
+function copyApiKey(key) {
+  navigator.clipboard.writeText(key).then(() => showToast('API key copied to clipboard.', 'success'));
+}
+
+function inviteUser() {
+  const name  = document.getElementById('inviteUserName').value.trim();
+  const email = document.getElementById('inviteUserEmail').value.trim();
+  const plan  = document.getElementById('inviteUserPlan').value;
+  if (!name || !email) { showToast('Please fill in all fields.', 'error'); return; }
+  closeModal('inviteUserModal');
+  clearModal('inviteUserModal');
+  showToast(`Invitation sent to ${email} (${plan} plan).`, 'success');
+}
+
+// ============================================================
+// AUDIT LOG
+// ============================================================
+
+function renderAuditTable(events) {
+  const tbody = document.getElementById('auditTable');
+  if (!events.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:32px">No events found.</td></tr>';
+    return;
+  }
+  const actionColors = {
+    login: 'badge-active', evidence: 'badge-pro', report: 'badge-legal',
+    user: 'badge-trial', subscription: 'badge-active', api: 'badge-expired',
+  };
+  tbody.innerHTML = events.map(e => `
+    <tr>
+      <td style="white-space:nowrap;font-family:monospace;font-size:12px">${e.ts}</td>
+      <td style="color:var(--text)">${e.actor}</td>
+      <td><span class="badge ${actionColors[e.action] || 'badge-free'}">${e.action}</span></td>
+      <td style="font-family:monospace;font-size:12px">${e.resource}</td>
+      <td>${e.details}</td>
+      <td style="font-family:monospace;font-size:12px;color:var(--text-muted)">${e.ip}</td>
+    </tr>
+  `).join('');
+}
+
+function filterAudit() {
+  const query  = document.getElementById('auditSearch').value.toLowerCase();
+  const action = document.getElementById('auditActionFilter').value;
+  const filtered = AUDIT_EVENTS.filter(e =>
+    (!query  || e.actor.includes(query) || e.details.toLowerCase().includes(query) || e.resource.toLowerCase().includes(query)) &&
+    (!action || e.action === action)
+  );
+  renderAuditTable(filtered);
+}
+
+function exportAuditCSV() {
+  const headers = ['Timestamp','Actor','Action','Resource','Details','IP'];
+  const rows = AUDIT_EVENTS.map(e => [e.ts, e.actor, e.action, e.resource, e.details, e.ip]);
+  downloadCSV('audit-log.csv', [headers, ...rows]);
+}
+
+// ============================================================
+// SETTINGS
+// ============================================================
+
+function loadSettings() {
+  try {
+    const s = JSON.parse(localStorage.getItem('eg_settings') || '{}');
+    if (s.apiUrl)           document.getElementById('settingApiUrl').value = s.apiUrl;
+    if (s.apiKey)           document.getElementById('settingApiKey').value = s.apiKey;
+    if (s['2fa'] !== undefined) document.getElementById('setting2fa').checked = s['2fa'];
+    if (s.ipWhitelist !== undefined) document.getElementById('settingIpWhitelist').checked = s.ipWhitelist;
+    if (s.timeout)          document.getElementById('settingTimeout').value = s.timeout;
+    if (s.freeLimit)        document.getElementById('settingFreeLimit').value = s.freeLimit;
+    if (s.registrations !== undefined) document.getElementById('settingRegistrations').checked = s.registrations;
+    if (s.maintenance !== undefined)   document.getElementById('settingMaintenance').checked = s.maintenance;
+  } catch {}
+}
+
+function saveSettings() {
+  const s = {
+    apiUrl:         document.getElementById('settingApiUrl').value,
+    apiKey:         document.getElementById('settingApiKey').value,
+    '2fa':          document.getElementById('setting2fa').checked,
+    ipWhitelist:    document.getElementById('settingIpWhitelist').checked,
+    timeout:        document.getElementById('settingTimeout').value,
+    freeLimit:      document.getElementById('settingFreeLimit').value,
+    registrations:  document.getElementById('settingRegistrations').checked,
+    maintenance:    document.getElementById('settingMaintenance').checked,
+  };
+  localStorage.setItem('eg_settings', JSON.stringify(s));
+  showToast('Settings saved.', 'success');
+}
+
+// ============================================================
+// MODALS
+// ============================================================
+
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+function clearModal(id) {
+  document.getElementById(id).querySelectorAll('input,select').forEach(el => {
+    if (el.type === 'select-one') el.selectedIndex = 0;
+    else el.value = '';
+  });
+}
+
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.remove('open');
+  });
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+  }
+});
+
+// ============================================================
+// UTILITIES
+// ============================================================
+
+function generateToken(length) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const arr = new Uint8Array(length);
+  crypto.getRandomValues(arr);
+  return Array.from(arr).map(b => chars[b % chars.length]).join('');
+}
+
+function downloadCSV(filename, rows) {
+  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+}
+
+let toastTimer;
+function showToast(msg, type = 'success') {
+  const toast = document.getElementById('toast');
+  toast.textContent = (type === 'success' ? '✓ ' : '✕ ') + msg;
+  toast.className = `toast ${type} show`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+
+document.addEventListener('DOMContentLoaded', () => {
+  renderDashboardCharts();
+  renderUsersTable(USERS);
+});
+</script>
 </body>
 </html>
