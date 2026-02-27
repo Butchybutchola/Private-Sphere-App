@@ -15,7 +15,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#0A0E1A"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "updates": {
       "url": "https://u.expo.dev/c6a5faf4-591a-41f6-a8d7-5c4a9602b36a"
     },
@@ -27,7 +29,8 @@
         "NSMicrophoneUsageDescription": "Evidence Guardian needs microphone access to record audio evidence.",
         "NSLocationWhenInUseUsageDescription": "Evidence Guardian needs location access to tag evidence with GPS coordinates.",
         "NSLocationAlwaysUsageDescription": "Evidence Guardian needs location access to tag evidence with GPS coordinates.",
-        "NSFaceIDUsageDescription": "Evidence Guardian uses biometric authentication to protect your evidence."
+        "NSFaceIDUsageDescription": "Evidence Guardian uses biometric authentication to protect your evidence.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -44,7 +47,14 @@
         "USE_BIOMETRIC",
         "USE_FINGERPRINT",
         "WRITE_EXTERNAL_STORAGE",
-        "READ_EXTERNAL_STORAGE"
+        "READ_EXTERNAL_STORAGE",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT"
       ]
     },
     "web": {
