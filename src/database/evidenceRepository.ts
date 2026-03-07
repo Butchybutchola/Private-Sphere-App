@@ -2,10 +2,47 @@ import { getDatabase } from './db';
 import { type SQLiteBindValue } from 'expo-sqlite';
 import { EvidenceItem, EvidenceType, EvidenceStatus } from '../types';
 import { generateUUID } from '../utils/uuid';
+import { encryptString, decryptString, rotateEncryptionKey } from '../services/encryptionService';
 
 type Row = Record<string, unknown>;
 
-function rowToEvidence(row: Record<string, unknown>): EvidenceItem {
+// ---- Encryption helpers ----
+
+async function encryptField(value: string | null | undefined): Promise<string | null> {
+  if (value == null) return null;
+  return encryptString(value);
+}
+
+/**
+ * Decrypt a field value that may be:
+ *  - null / undefined  → return null
+ *  - EG2: ciphertext   → decrypt with current key
+ *  - EG1: ciphertext   → decrypt legacy format
+ *  - plaintext         → return as-is (graceful fallback for pre-encryption records)
+ */
+async function tryDecrypt(value: string | null | undefined): Promise<string | null> {
+  if (value == null) return null;
+  try {
+    return await decryptString(value);
+  } catch {
+    // Not encrypted (legacy plaintext record) — return as-is
+    return value;
+  }
+}
+
+// ---- Row mapping ----
+
+async function rowToEvidence(row: Row): Promise<EvidenceItem> {
+  const title       = await tryDecrypt(row.title as string | null);
+  const description = await tryDecrypt(row.description as string | null);
+  const tagsRaw     = await tryDecrypt(row.tags as string | null);
+  const transcription  = await tryDecrypt(row.transcription as string | null);
+  const breachClause   = await tryDecrypt(row.breach_clause as string | null);
+
+  const tags: string[] = (() => {
+    try { return JSON.parse(tagsRaw || '[]'); } catch { return []; }
+  })();
+
   return {
     id: row.id as string,
     type: row.type as EvidenceType,
@@ -21,12 +58,12 @@ function rowToEvidence(row: Record<string, unknown>): EvidenceItem {
     longitude: row.longitude as number | undefined,
     altitude: row.altitude as number | undefined,
     locationAccuracy: row.location_accuracy as number | undefined,
-    title: row.title as string | undefined,
-    description: row.description as string | undefined,
-    tags: (() => { try { return JSON.parse((row.tags as string) || '[]'); } catch { return []; } })(),
+    title: title ?? undefined,
+    description: description ?? undefined,
+    tags,
     courtOrderId: row.court_order_id as string | undefined,
-    breachClause: row.breach_clause as string | undefined,
-    transcription: row.transcription as string | undefined,
+    breachClause: breachClause ?? undefined,
+    transcription: transcription ?? undefined,
     transcriptionStatus: row.transcription_status as EvidenceItem['transcriptionStatus'],
     parentId: row.parent_id as string | undefined,
     isOriginal: Boolean(row.is_original),
@@ -36,12 +73,20 @@ function rowToEvidence(row: Record<string, unknown>): EvidenceItem {
   };
 }
 
+// ---- CRUD ----
+
 export async function insertEvidence(
   evidence: Omit<EvidenceItem, 'id' | 'createdAt' | 'updatedAt'>
 ): Promise<string> {
   const db = await getDatabase();
   const id = generateUUID();
   const now = new Date().toISOString();
+
+  const encTitle       = await encryptField(evidence.title);
+  const encDescription = await encryptField(evidence.description);
+  const encTags        = await encryptField(JSON.stringify(evidence.tags));
+  const encBreachClause = await encryptField(evidence.breachClause);
+  const encTranscription = await encryptField(evidence.transcription);
 
   await db.runAsync(
     `INSERT INTO evidence (
@@ -67,12 +112,12 @@ export async function insertEvidence(
       evidence.longitude ?? null,
       evidence.altitude ?? null,
       evidence.locationAccuracy ?? null,
-      evidence.title ?? null,
-      evidence.description ?? null,
-      JSON.stringify(evidence.tags),
+      encTitle,
+      encDescription,
+      encTags,
       evidence.courtOrderId ?? null,
-      evidence.breachClause ?? null,
-      evidence.transcription ?? null,
+      encBreachClause,
+      encTranscription,
       evidence.transcriptionStatus ?? null,
       evidence.parentId ?? null,
       evidence.isOriginal ? 1 : 0,
@@ -88,13 +133,13 @@ export async function insertEvidence(
 export async function getAllEvidence(): Promise<EvidenceItem[]> {
   const db = await getDatabase();
   const rows = await db.getAllAsync('SELECT * FROM evidence ORDER BY captured_at DESC');
-  return (rows as Row[]).map(rowToEvidence);
+  return Promise.all((rows as Row[]).map(rowToEvidence));
 }
 
 export async function getEvidenceById(id: string): Promise<EvidenceItem | null> {
   const db = await getDatabase();
   const row = await db.getFirstAsync('SELECT * FROM evidence WHERE id = ?', [id]);
-  return row ? rowToEvidence(row as Record<string, unknown>) : null;
+  return row ? rowToEvidence(row as Row) : null;
 }
 
 export async function getEvidenceByType(type: EvidenceType): Promise<EvidenceItem[]> {
@@ -103,7 +148,7 @@ export async function getEvidenceByType(type: EvidenceType): Promise<EvidenceIte
     'SELECT * FROM evidence WHERE type = ? ORDER BY captured_at DESC',
     [type]
   );
-  return (rows as Row[]).map(rowToEvidence);
+  return Promise.all((rows as Row[]).map(rowToEvidence));
 }
 
 export async function getEvidenceByCourtOrder(courtOrderId: string): Promise<EvidenceItem[]> {
@@ -112,7 +157,7 @@ export async function getEvidenceByCourtOrder(courtOrderId: string): Promise<Evi
     'SELECT * FROM evidence WHERE court_order_id = ? ORDER BY captured_at DESC',
     [courtOrderId]
   );
-  return (rows as Row[]).map(rowToEvidence);
+  return Promise.all((rows as Row[]).map(rowToEvidence));
 }
 
 export async function updateEvidenceMetadata(
@@ -125,23 +170,23 @@ export async function updateEvidenceMetadata(
 
   if (updates.title !== undefined) {
     setClauses.push('title = ?');
-    values.push(updates.title);
+    values.push(updates.title ? await encryptString(updates.title) : null);
   }
   if (updates.description !== undefined) {
     setClauses.push('description = ?');
-    values.push(updates.description);
+    values.push(updates.description ? await encryptString(updates.description) : null);
   }
   if (updates.tags !== undefined) {
     setClauses.push('tags = ?');
-    values.push(JSON.stringify(updates.tags));
+    values.push(await encryptString(JSON.stringify(updates.tags)));
   }
   if (updates.courtOrderId !== undefined) {
     setClauses.push('court_order_id = ?');
-    values.push(updates.courtOrderId);
+    values.push(updates.courtOrderId ?? null);
   }
   if (updates.breachClause !== undefined) {
     setClauses.push('breach_clause = ?');
-    values.push(updates.breachClause);
+    values.push(updates.breachClause ? await encryptString(updates.breachClause) : null);
   }
 
   if (setClauses.length === 0) return;
@@ -161,9 +206,10 @@ export async function updateTranscription(
   status: EvidenceItem['transcriptionStatus']
 ): Promise<void> {
   const db = await getDatabase();
+  const encTranscription = await encryptString(transcription);
   await db.runAsync(
     `UPDATE evidence SET transcription = ?, transcription_status = ?, updated_at = datetime('now') WHERE id = ?`,
-    [transcription, status ?? null, id]
+    [encTranscription, status ?? null, id]
   );
 }
 
@@ -173,17 +219,85 @@ export async function getEvidenceVersions(originalId: string): Promise<EvidenceI
     'SELECT * FROM evidence WHERE id = ? OR parent_id = ? ORDER BY version_number ASC',
     [originalId, originalId]
   );
-  return (rows as Row[]).map(rowToEvidence);
+  return Promise.all((rows as Row[]).map(rowToEvidence));
 }
 
+/**
+ * Search evidence by decrypting all records in memory and filtering.
+ * SQL LIKE cannot be used against encrypted fields.
+ */
 export async function searchEvidence(query: string): Promise<EvidenceItem[]> {
-  const db = await getDatabase();
-  const pattern = `%${query}%`;
-  const rows = await db.getAllAsync(
-    `SELECT * FROM evidence
-     WHERE title LIKE ? OR description LIKE ? OR tags LIKE ? OR transcription LIKE ?
-     ORDER BY captured_at DESC`,
-    [pattern, pattern, pattern, pattern]
+  const all = await getAllEvidence();
+  const q = query.toLowerCase();
+  return all.filter(item =>
+    item.title?.toLowerCase().includes(q) ||
+    item.description?.toLowerCase().includes(q) ||
+    item.tags.some(t => t.toLowerCase().includes(q)) ||
+    item.transcription?.toLowerCase().includes(q)
   );
-  return (rows as Row[]).map(rowToEvidence);
+}
+
+// ---- Key rotation ----
+
+/**
+ * Re-encrypts all sensitive evidence fields with a freshly generated key.
+ * Safe to call at any time — a crash mid-rotation leaves the old key in
+ * the backup slot so nothing is permanently lost.
+ *
+ * @returns The number of rows updated and the hex ID of the new key.
+ */
+export async function rotateEvidenceEncryption(): Promise<{ rotatedCount: number; newKeyId: string }> {
+  const db = await getDatabase();
+
+  type RawRow = {
+    id: string;
+    title: string | null;
+    description: string | null;
+    tags: string | null;
+    transcription: string | null;
+    breach_clause: string | null;
+  };
+
+  const rows = await db.getAllAsync(
+    'SELECT id, title, description, tags, transcription, breach_clause FROM evidence'
+  ) as RawRow[];
+
+  // Build a flat ciphertext map keyed by "id:field"
+  const ciphertexts: Record<string, string> = {};
+  for (const row of rows) {
+    if (row.title)        ciphertexts[`${row.id}:title`]       = row.title;
+    if (row.description)  ciphertexts[`${row.id}:description`]  = row.description;
+    if (row.tags)         ciphertexts[`${row.id}:tags`]         = row.tags;
+    if (row.transcription) ciphertexts[`${row.id}:transcription`] = row.transcription;
+    if (row.breach_clause) ciphertexts[`${row.id}:breachClause`]  = row.breach_clause;
+  }
+
+  const { reEncrypted, newKeyId } = await rotateEncryptionKey(ciphertexts);
+
+  // Write re-encrypted values back to the DB
+  let rotatedCount = 0;
+  for (const row of rows) {
+    const title       = reEncrypted[`${row.id}:title`]        ?? row.title;
+    const description = reEncrypted[`${row.id}:description`]  ?? row.description;
+    const tags        = reEncrypted[`${row.id}:tags`]         ?? row.tags;
+    const transcription = reEncrypted[`${row.id}:transcription`] ?? row.transcription;
+    const breachClause  = reEncrypted[`${row.id}:breachClause`]  ?? row.breach_clause;
+
+    const changed =
+      title !== row.title ||
+      description !== row.description ||
+      tags !== row.tags ||
+      transcription !== row.transcription ||
+      breachClause !== row.breach_clause;
+
+    if (changed) {
+      await db.runAsync(
+        `UPDATE evidence SET title = ?, description = ?, tags = ?, transcription = ?, breach_clause = ?, updated_at = datetime('now') WHERE id = ?`,
+        [title, description, tags, transcription, breachClause, row.id]
+      );
+      rotatedCount++;
+    }
+  }
+
+  return { rotatedCount, newKeyId };
 }
