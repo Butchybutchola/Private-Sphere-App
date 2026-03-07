@@ -73,7 +73,11 @@ async function pushEvidenceToCloud(
     onUploadProgress ? (p) => onUploadProgress(evidence.id, p) : undefined
   );
 
-  // Push metadata to Firestore
+  // Push non-sensitive metadata to Firestore.
+  // title, description, tags, breachClause and transcription are intentionally
+  // omitted — they are encrypted at rest in local SQLite and must not be
+  // stored in cleartext in Firestore. The encrypted file in Firebase Storage
+  // is the authoritative source of that content.
   await setDoc(getUserDoc('evidence', evidence.id), {
     type: evidence.type,
     status: evidence.status,
@@ -86,12 +90,7 @@ async function pushEvidenceToCloud(
     longitude: evidence.longitude ?? null,
     altitude: evidence.altitude ?? null,
     locationAccuracy: evidence.locationAccuracy ?? null,
-    title: evidence.title ?? null,
-    description: evidence.description ?? null,
-    tags: evidence.tags,
     courtOrderId: evidence.courtOrderId ?? null,
-    breachClause: evidence.breachClause ?? null,
-    transcription: evidence.transcription ?? null,
     transcriptionStatus: evidence.transcriptionStatus ?? null,
     parentId: evidence.parentId ?? null,
     isOriginal: evidence.isOriginal,
