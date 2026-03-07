@@ -51,8 +51,6 @@ describe('checkForUpdates — forced (force=true)', () => {
   });
 
   it('runs again after the 60 s rate-limit window (using Date mock)', async () => {
-    const { getAllLegislation } = require('../../database/legislationRepository');
-
     await checkForUpdates(true);  // first forced call
 
     // Advance time by 61 seconds
