@@ -21,6 +21,20 @@ import * as FileSystem from 'expo-file-system';
 import { getFirebaseStorage, isFirebaseConfigured } from '../config/firebase';
 import { getCurrentUser } from './authService';
 
+const MAX_EVIDENCE_BYTES  = 500 * 1024 * 1024;  // 500 MB — covers long video recordings
+const MAX_DOCUMENT_BYTES  =  50 * 1024 * 1024;  //  50 MB — court orders & reports
+
+async function assertFileSizeLimit(localUri: string, limitBytes: number): Promise<void> {
+  const info = await FileSystem.getInfoAsync(localUri, { size: true });
+  if (!info.exists) throw new Error(`File not found: ${localUri}`);
+  const size = (info as FileSystem.FileInfo & { size?: number }).size ?? 0;
+  if (size > limitBytes) {
+    const limitMb = (limitBytes / (1024 * 1024)).toFixed(0);
+    const sizeMb  = (size / (1024 * 1024)).toFixed(1);
+    throw new Error(`File too large for upload: ${sizeMb} MB exceeds the ${limitMb} MB limit`);
+  }
+}
+
 export interface UploadProgress {
   bytesTransferred: number;
   totalBytes: number;
@@ -48,6 +62,8 @@ export async function uploadEvidenceFile(
   if (!isFirebaseConfigured()) {
     throw new Error('Firebase not configured. Set up firebase config to enable cloud sync.');
   }
+
+  await assertFileSizeLimit(localUri, MAX_EVIDENCE_BYTES);
 
   const storage = getFirebaseStorage();
   const storagePath = `${getUserStoragePath('evidence')}/${evidenceId}/${fileName}`;
@@ -99,6 +115,8 @@ export async function uploadCourtOrderFile(
     throw new Error('Firebase not configured.');
   }
 
+  await assertFileSizeLimit(localUri, MAX_DOCUMENT_BYTES);
+
   const storage = getFirebaseStorage();
   const storagePath = `${getUserStoragePath('court_orders')}/${orderId}/${fileName}`;
   const storageRef = ref(storage, storagePath);
@@ -143,6 +161,8 @@ export async function uploadReportFile(
   if (!isFirebaseConfigured()) {
     throw new Error('Firebase not configured.');
   }
+
+  await assertFileSizeLimit(localUri, MAX_DOCUMENT_BYTES);
 
   const storage = getFirebaseStorage();
   const storagePath = `${getUserStoragePath('reports')}/${reportId}/${fileName}`;

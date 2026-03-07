@@ -378,8 +378,11 @@ function decodeHtmlEntities(text: string): string {
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
     .replace(/&#39;/g, "'")
-    .replace(/&apos;/g, "'");
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&#(\d+);/g, (_, dec: string) => String.fromCharCode(Number(dec)))
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex: string) => String.fromCharCode(parseInt(hex, 16)));
 }
 
 /**
