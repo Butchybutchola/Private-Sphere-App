@@ -139,12 +139,15 @@ async function pushAuditLogToCloud(entries: AuditLogEntry[]): Promise<void> {
 
     for (const entry of chunk) {
       const entryRef = doc(db, 'users', user.uid, 'audit_log', entry.id);
+      // metadata is intentionally omitted: it can contain plaintext evidence
+      // content (title, description, breachDescription, tags) which must not
+      // be stored in cleartext in Firestore. The action/resourceId pair is
+      // sufficient for cross-device sync of the audit trail structure.
       batch.set(entryRef, {
         userId: entry.userId,
         action: entry.action,
         resourceType: entry.resourceType,
         resourceId: entry.resourceId,
-        metadata: entry.metadata ?? null,
         timestamp: entry.timestamp,
         syncedAt: serverTimestamp(),
       }, { merge: true });
