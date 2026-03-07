@@ -15,6 +15,8 @@ import * as SecureStore from 'expo-secure-store';
 
 const KEY_STORE_V2 = 'evidence_guardian_enc_key_v2';
 const KEY_STORE_V1 = 'evidence_guardian_enc_key';
+/** Backup slot used during rotation so the old key survives a crash mid-rotation */
+const KEY_STORE_ROTATION_BACKUP = 'evidence_guardian_enc_key_rotation_backup';
 
 // ---- SubtleCrypto access ----
 
@@ -141,6 +143,100 @@ async function decryptLegacyEg1(ciphertext: string): Promise<string> {
   } catch {
     throw new Error('Failed to decode legacy EG1 data');
   }
+}
+
+/**
+ * Rotates the AES-256-GCM encryption key.
+ *
+ * Pass any currently-encrypted EG2 ciphertexts via `ciphertexts`
+ * (a map of arbitrary string keys → EG2 ciphertext strings).
+ * They will be decrypted with the old key and re-encrypted with the new key.
+ * The old key is only deleted after all re-encryption succeeds, so a crash
+ * mid-rotation leaves the backup intact and can be recovered.
+ *
+ * @returns Object containing the re-encrypted ciphertexts and a hex ID of the
+ *   new key (SHA-256 of the JWK).  The caller is responsible for persisting
+ *   the returned ciphertexts back to their storage.
+ */
+export async function rotateEncryptionKey(
+  ciphertexts: Record<string, string> = {},
+): Promise<{ reEncrypted: Record<string, string>; newKeyId: string }> {
+  const subtle = getSubtle();
+
+  // 1. Back up the current key so we can recover if interrupted
+  const currentJwk = await SecureStore.getItemAsync(KEY_STORE_V2);
+  if (currentJwk) {
+    await SecureStore.setItemAsync(KEY_STORE_ROTATION_BACKUP, currentJwk);
+  }
+
+  // 2. Load old key for decryption (needed before we overwrite the store)
+  let oldKey: CryptoKey | null = null;
+  if (currentJwk) {
+    oldKey = await subtle.importKey(
+      'jwk',
+      JSON.parse(currentJwk) as JsonWebKey,
+      { name: 'AES-GCM', length: 256 },
+      false,
+      ['decrypt'],
+    );
+  }
+
+  // 3. Generate the new key
+  const newKey = await subtle.generateKey(
+    { name: 'AES-GCM', length: 256 },
+    true,
+    ['encrypt', 'decrypt'],
+  );
+  const newJwk = await subtle.exportKey('jwk', newKey);
+
+  // 4. Re-encrypt all supplied ciphertexts (decrypt with old, encrypt with new)
+  const reEncrypted: Record<string, string> = {};
+  for (const [id, ciphertext] of Object.entries(ciphertexts)) {
+    if (!ciphertext.startsWith('EG2:')) {
+      // EG1 or unknown — pass through unchanged; caller should migrate separately
+      reEncrypted[id] = ciphertext;
+      continue;
+    }
+
+    if (!oldKey) {
+      throw new Error('Cannot re-encrypt: no existing key found for decryption');
+    }
+
+    const parts = ciphertext.split(':');
+    if (parts.length !== 3) {
+      throw new Error(`Corrupted EG2 ciphertext for id "${id}"`);
+    }
+
+    const iv = base64ToUint8(parts[1]);
+    const cipherBytes = base64ToUint8(parts[2]);
+
+    const plainBuffer = await subtle.decrypt(
+      { name: 'AES-GCM', iv: iv as Uint8Array<ArrayBuffer> },
+      oldKey,
+      cipherBytes as Uint8Array<ArrayBuffer>,
+    );
+    const plaintext = new TextDecoder().decode(plainBuffer);
+
+    // Encrypt with new key
+    const newIv = globalThis.crypto.getRandomValues(new Uint8Array(12));
+    const encoded = new TextEncoder().encode(plaintext);
+    const newCipherBuffer = await subtle.encrypt({ name: 'AES-GCM', iv: newIv }, newKey, encoded);
+    reEncrypted[id] = `EG2:${uint8ToBase64(newIv)}:${uint8ToBase64(new Uint8Array(newCipherBuffer))}`;
+  }
+
+  // 5. Atomically commit new key — old key backup stays until cleanup
+  await SecureStore.setItemAsync(KEY_STORE_V2, JSON.stringify(newJwk));
+
+  // 6. Clean up backup now that rotation is complete
+  await SecureStore.deleteItemAsync(KEY_STORE_ROTATION_BACKUP);
+
+  const newKeyId = await Crypto.digestStringAsync(
+    Crypto.CryptoDigestAlgorithm.SHA256,
+    JSON.stringify(newJwk),
+    { encoding: Crypto.CryptoEncoding.HEX },
+  );
+
+  return { reEncrypted, newKeyId };
 }
 
 /**

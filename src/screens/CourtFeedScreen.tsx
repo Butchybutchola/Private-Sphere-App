@@ -23,6 +23,9 @@ const FILTER_OPTIONS: Array<{ label: string; value: LegislationJurisdiction | nu
   { label: 'QLD', value: 'QLD' },
   { label: 'WA', value: 'WA' },
   { label: 'SA', value: 'SA' },
+  { label: 'TAS', value: 'TAS' },
+  { label: 'ACT', value: 'ACT' },
+  { label: 'NT', value: 'NT' },
 ];
 
 const CATEGORY_CONFIG: Record<string, { label: string; color: string; icon: string }> = {
