@@ -6,6 +6,7 @@
  */
 
 import { Legislation } from '../types';
+import { upsertLegislation } from './legislationRepository';
 
 export const LEGISLATION_SEED_DATA: Omit<Legislation, 'createdAt' | 'updatedAt'>[] = [
   // ---- FEDERAL ----
@@ -419,7 +420,6 @@ export const LEGISLATION_SEED_DATA: Omit<Legislation, 'createdAt' | 'updatedAt'>
  * Uses upsert so it's safe to call multiple times.
  */
 export async function seedLegislationData(): Promise<void> {
-  const { upsertLegislation } = await import('./legislationRepository');
   for (const item of LEGISLATION_SEED_DATA) {
     await upsertLegislation(item);
   }

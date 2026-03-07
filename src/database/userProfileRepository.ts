@@ -30,7 +30,7 @@ export async function getUserProfile(): Promise<UserProfile | null> {
 export async function updateUserProfile(id: string, updates: Partial<UserProfile>): Promise<void> {
   const db = await getDatabase();
   const fields: string[] = [];
-  const values: unknown[] = [];
+  const values: (string | number | boolean | null)[] = [];
 
   const fieldMap: Record<string, string> = {
     firstName: 'first_name', lastName: 'last_name', dateOfBirth: 'date_of_birth',
@@ -41,7 +41,7 @@ export async function updateUserProfile(id: string, updates: Partial<UserProfile
   for (const [key, col] of Object.entries(fieldMap)) {
     if (key in updates) {
       fields.push(`${col} = ?`);
-      values.push((updates as Record<string, unknown>)[key]);
+      values.push((updates as Record<string, string | number | boolean | null>)[key]);
     }
   }
 
@@ -100,7 +100,7 @@ export async function getOtherParties(userId: string): Promise<OtherParty[]> {
 export async function updateOtherParty(id: string, updates: Partial<OtherParty>): Promise<void> {
   const db = await getDatabase();
   const fields: string[] = [];
-  const values: unknown[] = [];
+  const values: (string | number | boolean | null)[] = [];
 
   const fieldMap: Record<string, string> = {
     firstName: 'first_name', lastName: 'last_name', dateOfBirth: 'date_of_birth',
@@ -111,7 +111,7 @@ export async function updateOtherParty(id: string, updates: Partial<OtherParty>)
   for (const [key, col] of Object.entries(fieldMap)) {
     if (key in updates) {
       fields.push(`${col} = ?`);
-      values.push((updates as Record<string, unknown>)[key]);
+      values.push((updates as Record<string, string | number | boolean | null>)[key]);
     }
   }
 
@@ -176,7 +176,7 @@ export async function getChildren(userId: string): Promise<Child[]> {
 export async function updateChild(id: string, updates: Partial<Child>): Promise<void> {
   const db = await getDatabase();
   const fields: string[] = [];
-  const values: unknown[] = [];
+  const values: (string | number | boolean | null)[] = [];
 
   const fieldMap: Record<string, string> = {
     firstName: 'first_name', lastName: 'last_name', dateOfBirth: 'date_of_birth',
@@ -185,7 +185,7 @@ export async function updateChild(id: string, updates: Partial<Child>): Promise<
 
   for (const [key, col] of Object.entries(fieldMap)) {
     if (key in updates) {
-      let val = (updates as Record<string, unknown>)[key];
+      let val: string | number | boolean | null = (updates as Record<string, string | number | boolean | null>)[key];
       if (key === 'livesWithUser') val = val ? 1 : 0;
       fields.push(`${col} = ?`);
       values.push(val);

@@ -119,7 +119,7 @@ export async function decryptString(ciphertext: string): Promise<string> {
   const cipherBytes = base64ToUint8(parts[2]);
 
   try {
-    const plainBuffer = await subtle.decrypt({ name: 'AES-GCM', iv }, key, cipherBytes);
+    const plainBuffer = await subtle.decrypt({ name: 'AES-GCM', iv: iv as Uint8Array<ArrayBuffer> }, key, cipherBytes as Uint8Array<ArrayBuffer>);
     return new TextDecoder().decode(plainBuffer);
   } catch {
     throw new Error('Decryption failed: data may be corrupted or tampered with');

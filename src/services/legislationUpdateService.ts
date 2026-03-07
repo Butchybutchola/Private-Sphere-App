@@ -19,6 +19,7 @@ import {
   getLastCheckTime,
 } from '../database/legislationRepository';
 import { Legislation } from '../types';
+import { digestStringAsync, CryptoDigestAlgorithm } from 'expo-crypto';
 
 // ---- Configuration ----
 
@@ -414,7 +415,6 @@ function findMatchingFeedItem(item: Legislation, feedItems: RssItem[]): RssItem 
  */
 async function computeHash(content: string): Promise<string> {
   try {
-    const { digestStringAsync, CryptoDigestAlgorithm } = await import('expo-crypto');
     return digestStringAsync(CryptoDigestAlgorithm.SHA256, content);
   } catch {
     // Fallback: djb2 hash for environments where expo-crypto isn't available
