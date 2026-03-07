@@ -12,6 +12,8 @@ import {
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../navigation/AppNavigator';
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import { hardenAndStoreEvidence, importExternalFile } from '../services/captureEngine';
@@ -25,7 +27,7 @@ export function CaptureScreen() {
   const [isRecording, setIsRecording] = useState(false);
   const [facing, setFacing] = useState<'front' | 'back'>('back');
   const cameraRef = useRef<CameraView>(null);
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const { refreshEvidence } = useDatabase();
 
   const capturePhoto = useCallback(async () => {

@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../theme';
-import { CourtFeedItem, LegislationJurisdiction } from '../types';
+import { CourtFeedItem } from '../types';
 import { getCourtFeed, markFeedItemRead, addCourtFeedItem } from '../database/legislationRepository';
 
 const CATEGORY_CONFIG: Record<string, { label: string; color: string; icon: string }> = {
@@ -90,11 +90,10 @@ export function CourtFeedScreen() {
   const [items, setItems] = useState<CourtFeedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [filter, setFilter] = useState<LegislationJurisdiction | null>(null);
 
   const loadData = useCallback(async () => {
     try {
-      let data = await getCourtFeed(filter || undefined);
+      let data = await getCourtFeed();
       // Seed sample data if empty
       if (data.length === 0 && !filter) {
         for (const item of SAMPLE_FEED) {
@@ -109,7 +108,7 @@ export function CourtFeedScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [filter]);
+  }, []);
 
   useEffect(() => {
     setLoading(true);

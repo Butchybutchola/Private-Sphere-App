@@ -4,6 +4,8 @@ import {
   StyleSheet, Alert, RefreshControl, Modal,
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../navigation/AppNavigator';
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import { useDatabase } from '../context/DatabaseContext';
@@ -24,7 +26,7 @@ export function CourtOrdersScreen() {
   const [showUpload, setShowUpload] = useState(false);
   const [title, setTitle] = useState('');
   const [selectedFile, setSelectedFile] = useState<{ uri: string; name: string } | null>(null);
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
   useFocusEffect(
     useCallback(() => {

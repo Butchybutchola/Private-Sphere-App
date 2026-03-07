@@ -5,7 +5,7 @@ let getLastSyncInfo: typeof import('../../services/ntpTime').getLastSyncInfo;
 beforeEach(() => {
   jest.resetModules();
   jest.clearAllMocks();
-  (globalThis as any).fetch = jest.fn();
+  (globalThis as { fetch: jest.Mock }).fetch = jest.fn();
 
   // Re-import to reset module-level cache
   const mod = require('../../services/ntpTime');
@@ -21,7 +21,7 @@ describe('ntpTime', () => {
   const mockDate = '2026-02-20T12:00:00.000Z';
 
   it('fetches time from worldtimeapi and returns NTP result', async () => {
-    ((globalThis as any).fetch as jest.Mock).mockResolvedValueOnce({
+    ((globalThis as { fetch: jest.Mock }).fetch).mockResolvedValueOnce({
       ok: true,
       json: async () => ({ utc_datetime: mockDate }),
     });
@@ -34,7 +34,7 @@ describe('ntpTime', () => {
   });
 
   it('falls back to second API when first fails', async () => {
-    ((globalThis as any).fetch as jest.Mock)
+    ((globalThis as { fetch: jest.Mock }).fetch)
       .mockRejectedValueOnce(new Error('Network error'))
       .mockResolvedValueOnce({
         ok: true,
@@ -49,7 +49,7 @@ describe('ntpTime', () => {
   });
 
   it('returns device fallback when all APIs fail', async () => {
-    ((globalThis as any).fetch as jest.Mock)
+    ((globalThis as { fetch: jest.Mock }).fetch)
       .mockRejectedValueOnce(new Error('Network error'))
       .mockRejectedValueOnce(new Error('Network error'));
 

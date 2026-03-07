@@ -3,7 +3,9 @@ import {
   View, Text, ScrollView, TouchableOpacity, TextInput,
   StyleSheet, Alert, Image, ActivityIndicator,
 } from 'react-native';
-import { useRoute, useNavigation } from '@react-navigation/native';
+import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../navigation/AppNavigator';
 import { Ionicons } from '@expo/vector-icons';
 import { Video, ResizeMode, Audio } from 'expo-av';
 import * as Sharing from 'expo-sharing';
@@ -18,8 +20,8 @@ import { theme } from '../theme';
 import { format } from 'date-fns';
 
 export function EvidenceDetailScreen() {
-  const route = useRoute<any>();
-  const navigation = useNavigation<any>();
+  const route = useRoute<RouteProp<RootStackParamList, 'EvidenceDetail'>>();
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const { evidenceId } = route.params;
   const { refreshEvidence } = useDatabase();
 

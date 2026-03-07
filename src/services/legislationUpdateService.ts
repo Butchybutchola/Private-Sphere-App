@@ -32,9 +32,6 @@ const RSS_FEEDS: Record<string, string> = {
   WA: 'https://www.legislation.wa.gov.au/legislation/statutes.nsf/feeds.html',
 };
 
-/** QLD API base URL */
-const QLD_API_BASE = 'https://api.legislation.qld.gov.au/v1';
-
 // ---- Public types ----
 
 export interface UpdateCheckResult {

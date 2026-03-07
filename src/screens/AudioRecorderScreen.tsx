@@ -13,6 +13,8 @@ import {
 import { Audio } from 'expo-av';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../navigation/AppNavigator';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { hardenAndStoreEvidence } from '../services/captureEngine';
 import { useDatabase } from '../context/DatabaseContext';
@@ -25,7 +27,7 @@ export function AudioRecorderScreen() {
   const [blackScreen, setBlackScreen] = useState(false);
   const [saving, setSaving] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const { refreshEvidence } = useDatabase();
 
   useEffect(() => {

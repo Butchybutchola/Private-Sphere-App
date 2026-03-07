@@ -4,6 +4,8 @@ import {
   StyleSheet, Alert,
 } from 'react-native';
 import { useRoute } from '@react-navigation/native';
+import { RouteProp } from '@react-navigation/native';
+import { RootStackParamList } from '../navigation/AppNavigator';
 import { Ionicons } from '@expo/vector-icons';
 import { CourtOrder, BreachLog } from '../types';
 import { getCourtOrderById, addClause, getBreachLogsForOrder } from '../database/courtOrderRepository';
@@ -11,7 +13,7 @@ import { theme } from '../theme';
 import { format } from 'date-fns';
 
 export function CourtOrderDetailScreen() {
-  const route = useRoute<any>();
+  const route = useRoute<RouteProp<RootStackParamList, 'CourtOrderDetail'>>();
   const { orderId } = route.params;
 
   const [order, setOrder] = useState<CourtOrder | null>(null);
