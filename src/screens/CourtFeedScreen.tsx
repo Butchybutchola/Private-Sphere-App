@@ -95,7 +95,7 @@ export function CourtFeedScreen() {
     try {
       let data = await getCourtFeed();
       // Seed sample data if empty
-      if (data.length === 0 && !filter) {
+      if (data.length === 0) {
         for (const item of SAMPLE_FEED) {
           await addCourtFeedItem(item);
         }
