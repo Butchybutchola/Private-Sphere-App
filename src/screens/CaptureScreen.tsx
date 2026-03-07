@@ -48,9 +48,12 @@ export function CaptureScreen() {
       const result = await hardenAndStoreEvidence(photo.uri, 'photo', 'image/jpeg');
       await refreshEvidence();
 
+      const ntpWarning = result.forensicMetadata.ntpServerUsed === 'device_fallback'
+        ? '\n\n⚠️ NTP servers unreachable — timestamp is from device clock and may not be court-admissible.'
+        : '';
       Alert.alert(
         'Evidence Captured',
-        `Photo hardened and locked.\nSHA-256: ${result.forensicMetadata.sha256Hash.substring(0, 16)}...`,
+        `Photo hardened and locked.\nSHA-256: ${result.forensicMetadata.sha256Hash.substring(0, 16)}...${ntpWarning}`,
         [
           { text: 'View', onPress: () => navigation.navigate('EvidenceDetail', { evidenceId: result.evidenceId }) },
           { text: 'OK' },
@@ -85,9 +88,12 @@ export function CaptureScreen() {
         const result = await hardenAndStoreEvidence(video.uri, 'video', 'video/mp4');
         await refreshEvidence();
 
+        const ntpWarning = result.forensicMetadata.ntpServerUsed === 'device_fallback'
+          ? '\n\n⚠️ NTP servers unreachable — timestamp is from device clock and may not be court-admissible.'
+          : '';
         Alert.alert(
           'Evidence Captured',
-          `Video hardened and locked.\nSHA-256: ${result.forensicMetadata.sha256Hash.substring(0, 16)}...`,
+          `Video hardened and locked.\nSHA-256: ${result.forensicMetadata.sha256Hash.substring(0, 16)}...${ntpWarning}`,
           [
             { text: 'View', onPress: () => navigation.navigate('EvidenceDetail', { evidenceId: result.evidenceId }) },
             { text: 'OK' },
@@ -123,9 +129,12 @@ export function CaptureScreen() {
       const importResult = await importExternalFile(asset.uri, type, mimeType);
       await refreshEvidence();
 
+      const ntpWarning = importResult.forensicMetadata.ntpServerUsed === 'device_fallback'
+        ? '\n\n⚠️ NTP servers unreachable — timestamp is from device clock and may not be court-admissible.'
+        : '';
       Alert.alert(
         'Evidence Imported',
-        `File hardened and locked.\nSHA-256: ${importResult.forensicMetadata.sha256Hash.substring(0, 16)}...`,
+        `File hardened and locked.\nSHA-256: ${importResult.forensicMetadata.sha256Hash.substring(0, 16)}...${ntpWarning}`,
         [
           { text: 'View', onPress: () => navigation.navigate('EvidenceDetail', { evidenceId: importResult.evidenceId }) },
           { text: 'OK' },

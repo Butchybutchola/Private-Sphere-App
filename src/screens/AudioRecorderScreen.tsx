@@ -106,9 +106,12 @@ export function AudioRecorderScreen() {
       setIsRecording(false);
       setBlackScreen(false);
 
+      const ntpWarning = result.forensicMetadata.ntpServerUsed === 'device_fallback'
+        ? '\n\n⚠️ NTP servers unreachable — timestamp is from device clock and may not be court-admissible.'
+        : '';
       Alert.alert(
         'Audio Evidence Captured',
-        `Duration: ${formatDuration(duration)}\nSHA-256: ${result.forensicMetadata.sha256Hash.substring(0, 16)}...`,
+        `Duration: ${formatDuration(duration)}\nSHA-256: ${result.forensicMetadata.sha256Hash.substring(0, 16)}...${ntpWarning}`,
         [
           { text: 'View', onPress: () => navigation.navigate('EvidenceDetail', { evidenceId: result.evidenceId }) },
           { text: 'OK', onPress: () => navigation.goBack() },

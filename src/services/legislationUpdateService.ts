@@ -26,6 +26,11 @@ import { digestStringAsync, CryptoDigestAlgorithm } from 'expo-crypto';
 /** Minimum interval between full update checks (ms) — default 7 days */
 const MIN_CHECK_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000;
 
+/** Minimum interval between forced checks to prevent rapid re-calls (ms) — 60 seconds */
+const MIN_FORCE_INTERVAL_MS = 60 * 1000;
+
+let lastForcedCheckTime: number | null = null;
+
 /** Known RSS feed URLs for state legislation updates */
 const RSS_FEEDS: Record<string, string> = {
   NSW: 'https://legislation.nsw.gov.au/rss',
@@ -59,7 +64,13 @@ export interface RssItem {
  * Safe to call frequently — skips if last check was within MIN_CHECK_INTERVAL_MS.
  */
 export async function checkForUpdates(force = false): Promise<UpdateCheckResult[]> {
-  if (!force) {
+  if (force) {
+    // Even forced calls are rate-limited to prevent rapid successive re-checks
+    if (lastForcedCheckTime !== null && Date.now() - lastForcedCheckTime < MIN_FORCE_INTERVAL_MS) {
+      return [];
+    }
+    lastForcedCheckTime = Date.now();
+  } else {
     const lastCheck = await getLastCheckTime();
     if (lastCheck) {
       const elapsed = Date.now() - new Date(lastCheck).getTime();

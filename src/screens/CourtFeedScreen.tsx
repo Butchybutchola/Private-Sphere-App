@@ -8,12 +8,22 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
-  ActivityIndicator, Linking, RefreshControl,
+  ActivityIndicator, Linking, RefreshControl, ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../theme';
-import { CourtFeedItem } from '../types';
+import { CourtFeedItem, LegislationJurisdiction } from '../types';
 import { getCourtFeed, markFeedItemRead, addCourtFeedItem } from '../database/legislationRepository';
+
+const FILTER_OPTIONS: Array<{ label: string; value: LegislationJurisdiction | null }> = [
+  { label: 'All', value: null },
+  { label: 'Federal', value: 'Federal' },
+  { label: 'NSW', value: 'NSW' },
+  { label: 'VIC', value: 'VIC' },
+  { label: 'QLD', value: 'QLD' },
+  { label: 'WA', value: 'WA' },
+  { label: 'SA', value: 'SA' },
+];
 
 const CATEGORY_CONFIG: Record<string, { label: string; color: string; icon: string }> = {
   practice_direction: { label: 'Practice Direction', color: theme.colors.primary, icon: 'document-text' },
@@ -90,12 +100,13 @@ export function CourtFeedScreen() {
   const [items, setItems] = useState<CourtFeedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [filter, setFilter] = useState<LegislationJurisdiction | null>(null);
 
   const loadData = useCallback(async () => {
     try {
-      let data = await getCourtFeed();
-      // Seed sample data if empty
-      if (data.length === 0) {
+      let data = await getCourtFeed(filter ?? undefined);
+      // Seed sample data if empty (only without an active filter)
+      if (data.length === 0 && filter === null) {
         for (const item of SAMPLE_FEED) {
           await addCourtFeedItem(item);
         }
@@ -108,7 +119,7 @@ export function CourtFeedScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [filter]);
 
   useEffect(() => {
     setLoading(true);
@@ -162,6 +173,23 @@ export function CourtFeedScreen() {
 
   return (
     <View style={styles.container}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.filterRow}
+      >
+        {FILTER_OPTIONS.map((opt) => (
+          <TouchableOpacity
+            key={opt.label}
+            style={[styles.filterPill, filter === opt.value && styles.filterPillActive]}
+            onPress={() => setFilter(opt.value)}
+          >
+            <Text style={[styles.filterPillText, filter === opt.value && styles.filterPillTextActive]}>
+              {opt.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
       {loading ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
@@ -199,6 +227,33 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
+  },
+  filterRow: {
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    gap: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  filterPill: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
+  },
+  filterPillActive: {
+    borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.primary + '20',
+  },
+  filterPillText: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    fontWeight: '600',
+  },
+  filterPillTextActive: {
+    color: theme.colors.primary,
   },
   list: {
     padding: theme.spacing.md,
