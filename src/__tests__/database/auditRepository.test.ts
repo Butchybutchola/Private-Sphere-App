@@ -53,7 +53,7 @@ function setupDbMocks(): void {
     // Apply WHERE conditions
     if (upper.includes('WHERE')) {
       // resource_type filter
-      const rtIdx = params.findIndex((_, i) =>
+      params.findIndex((_, i) =>
         upper.split('?')[i]?.includes('RESOURCE_TYPE')
       );
       // We reconstruct the filter by inspecting the SQL and params positionally

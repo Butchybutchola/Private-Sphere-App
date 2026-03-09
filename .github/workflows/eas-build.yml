@@ -43,7 +43,7 @@ jobs:
     name: Build Android APK
     runs-on: ubuntu-latest
     needs: validate
-    if: ${{ github.event_name == 'push' || github.event.inputs.platform == 'all' || github.event.inputs.platform == 'android' }}
+    if: ${{ (github.event_name == 'push' || github.event.inputs.platform == 'all' || github.event.inputs.platform == 'android') && secrets.EXPO_TOKEN != '' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -70,7 +70,7 @@ jobs:
     name: Build iOS
     runs-on: ubuntu-latest
     needs: validate
-    if: ${{ github.event_name == 'push' || github.event.inputs.platform == 'all' || github.event.inputs.platform == 'ios' }}
+    if: ${{ (github.event_name == 'push' || github.event.inputs.platform == 'all' || github.event.inputs.platform == 'ios') && secrets.EXPO_TOKEN != '' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
