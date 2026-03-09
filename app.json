@@ -13,9 +13,6 @@
       "backgroundColor": "#0A0E1A"
     },
     "assetBundlePatterns": ["**/*"],
-    "updates": {
-      "url": "https://u.expo.dev/c6a5faf4-591a-41f6-a8d7-5c4a9602b36a"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.evidenceguardian.app",
