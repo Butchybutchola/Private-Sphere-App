@@ -4,9 +4,6 @@
     "slug": "evidence-guardian",
     "owner": "evidence-guardian",
     "version": "1.0.0",
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
