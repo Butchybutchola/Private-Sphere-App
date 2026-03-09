@@ -18,6 +18,8 @@ import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import { hardenAndStoreEvidence, importExternalFile } from '../services/captureEngine';
 import { useDatabase } from '../context/DatabaseContext';
+import { getUserProfile } from '../database/userProfileRepository';
+import { checkRecordingConsent } from '../utils/recordingConsent';
 import { theme } from '../theme';
 
 export function CaptureScreen() {
@@ -73,6 +75,11 @@ export function CaptureScreen() {
       cameraRef.current.stopRecording();
       setIsRecording(false);
     } else {
+      // Display jurisdiction-appropriate recording consent warning (spec v2.0)
+      const profile = await getUserProfile().catch(() => null);
+      const consented = await checkRecordingConsent(profile?.state, 'video');
+      if (!consented) return;
+
       setIsRecording(true);
       setCapturing(true);
       try {

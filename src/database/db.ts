@@ -228,5 +228,52 @@ export async function initDatabase(): Promise<void> {
     CREATE INDEX IF NOT EXISTS idx_court_feed_published ON court_feed(published_at);
     CREATE INDEX IF NOT EXISTS idx_legislation_update_log_legislation ON legislation_update_log(legislation_id);
     CREATE INDEX IF NOT EXISTS idx_legislation_update_log_timestamp ON legislation_update_log(timestamp);
+
+    -- Chain of custody: every interaction with evidence is recorded here.
+    -- Each event also stores the SHA-256 of the evidence file at the time
+    -- of the event so tampering between events can be detected forensically.
+    CREATE TABLE IF NOT EXISTS chain_of_custody_events (
+      id TEXT PRIMARY KEY NOT NULL,
+      evidence_id TEXT NOT NULL,
+      event_type TEXT NOT NULL CHECK(event_type IN ('CAPTURE','VIEW','EXPORT','VERIFY','BACKUP','REPORT_INCLUDE','SHARE')),
+      timestamp TEXT NOT NULL,
+      actor_type TEXT NOT NULL DEFAULT 'USER' CHECK(actor_type IN ('USER','SYSTEM','LAWYER','WITNESS')),
+      actor_id TEXT NOT NULL DEFAULT 'local_user',
+      hash_at_event TEXT NOT NULL,
+      details TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (evidence_id) REFERENCES evidence(id)
+    );
+
+    -- Witness statements: secure tokens issued to corroborating witnesses.
+    CREATE TABLE IF NOT EXISTS witness_statements (
+      id TEXT PRIMARY KEY NOT NULL,
+      incident_id TEXT NOT NULL,
+      witness_token TEXT NOT NULL UNIQUE,
+      statement_type TEXT NOT NULL CHECK(statement_type IN ('TEXT','AUDIO','VIDEO')),
+      content_hash TEXT,
+      capture_timestamp TEXT,
+      device_metadata TEXT,
+      status TEXT NOT NULL DEFAULT 'PENDING' CHECK(status IN ('PENDING','CAPTURED','VERIFIED','EXPIRED')),
+      expires_at TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    -- Breach alerts: time/location/communication triggers tied to order clauses.
+    CREATE TABLE IF NOT EXISTS breach_alerts (
+      id TEXT PRIMARY KEY NOT NULL,
+      clause_id TEXT NOT NULL,
+      trigger_type TEXT NOT NULL CHECK(trigger_type IN ('TIME','LOCATION','COMMUNICATION')),
+      expected_value TEXT NOT NULL,
+      grace_period_min INTEGER NOT NULL DEFAULT 15,
+      recurrence TEXT,
+      is_active INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (clause_id) REFERENCES court_order_clauses(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_coc_evidence ON chain_of_custody_events(evidence_id);
+    CREATE INDEX IF NOT EXISTS idx_coc_timestamp ON chain_of_custody_events(timestamp);
+    CREATE INDEX IF NOT EXISTS idx_breach_alerts_clause ON breach_alerts(clause_id);
   `);
 }

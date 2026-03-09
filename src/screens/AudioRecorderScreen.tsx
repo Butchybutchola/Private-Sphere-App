@@ -18,6 +18,8 @@ import { RootStackParamList } from '../navigation/AppNavigator';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { hardenAndStoreEvidence } from '../services/captureEngine';
 import { useDatabase } from '../context/DatabaseContext';
+import { getUserProfile } from '../database/userProfileRepository';
+import { checkRecordingConsent } from '../utils/recordingConsent';
 import { theme } from '../theme';
 
 export function AudioRecorderScreen() {
@@ -46,6 +48,11 @@ export function AudioRecorderScreen() {
   };
 
   const startRecording = async () => {
+    // Display jurisdiction-appropriate recording consent warning (spec v2.0)
+    const profile = await getUserProfile().catch(() => null);
+    const consented = await checkRecordingConsent(profile?.state, 'audio');
+    if (!consented) return;
+
     try {
       const permission = await Audio.requestPermissionsAsync();
       if (!permission.granted) {

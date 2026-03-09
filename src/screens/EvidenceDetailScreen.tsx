@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, TextInput,
   StyleSheet, Alert, Image, ActivityIndicator,
@@ -15,6 +15,7 @@ import { getEvidenceById, updateEvidenceMetadata, getEvidenceVersions } from '..
 import { verifyEvidenceIntegrity } from '../services/captureEngine';
 import { transcribeAudio } from '../services/transcriptionService';
 import { logAuditEvent } from '../database/auditRepository';
+import { logCoCEvent } from '../database/chainOfCustodyRepository';
 import { useDatabase } from '../context/DatabaseContext';
 import { theme } from '../theme';
 import { format } from 'date-fns';
@@ -29,6 +30,7 @@ export function EvidenceDetailScreen() {
   const [versions, setVersions] = useState<EvidenceItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [verifying, setVerifying] = useState(false);
+  const viewLoggedRef = useRef(false);
   const [integrityStatus, setIntegrityStatus] = useState<'unknown' | 'valid' | 'tampered'>('unknown');
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
@@ -52,6 +54,12 @@ export function EvidenceDetailScreen() {
       setEditDescription(item.description || '');
       const versionList = await getEvidenceVersions(item.isOriginal ? item.id : (item.parentId ?? item.id));
       setVersions(versionList);
+
+      // Log VIEW chain-of-custody event once per screen mount
+      if (!viewLoggedRef.current) {
+        viewLoggedRef.current = true;
+        logCoCEvent(evidenceId, 'VIEW', item.sha256Hash).catch(() => {});
+      }
     }
     setLoading(false);
   }, [evidenceId]);
@@ -131,6 +139,7 @@ export function EvidenceDetailScreen() {
       }
 
       await logAuditEvent('exported', 'evidence', evidence.id);
+      await logCoCEvent(evidence.id, 'EXPORT', evidence.sha256Hash, { method: 'share' });
       await Sharing.shareAsync(evidence.filePath, {
         mimeType: evidence.mimeType,
         dialogTitle: `Share Evidence: ${evidence.title || 'Untitled'}`,

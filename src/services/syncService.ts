@@ -34,6 +34,7 @@ import { uploadEvidenceFile, UploadProgress } from './cloudStorageService';
 import { getAllEvidence } from '../database/evidenceRepository';
 import { getAllCourtOrders } from '../database/courtOrderRepository';
 import { getAuditLog } from '../database/auditRepository';
+import { logCoCEvent } from '../database/chainOfCustodyRepository';
 import { EvidenceItem, CourtOrder, AuditLogEntry } from '../types';
 
 export type SyncStatus = 'idle' | 'syncing' | 'success' | 'error' | 'offline';
@@ -99,6 +100,11 @@ async function pushEvidenceToCloud(
     localUpdatedAt: evidence.updatedAt,
     syncedAt: serverTimestamp(),
   }, { merge: true });
+
+  // Record BACKUP chain-of-custody event
+  await logCoCEvent(evidence.id, 'BACKUP', evidence.sha256Hash, {
+    destination: 'firebase',
+  }, 'SYSTEM');
 }
 
 async function pushCourtOrderToCloud(order: CourtOrder): Promise<void> {
