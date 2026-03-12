@@ -21,6 +21,8 @@ function rowToEvidence(row: Record<string, unknown>): EvidenceItem {
     longitude: row.longitude as number | undefined,
     altitude: row.altitude as number | undefined,
     locationAccuracy: row.location_accuracy as number | undefined,
+    sourceCapturedAt: row.source_captured_at as string | undefined,
+    sourceMetadata: row.source_metadata as string | undefined,
     title: row.title as string | undefined,
     description: row.description as string | undefined,
     tags: JSON.parse((row.tags as string) || '[]'),
@@ -46,12 +48,12 @@ export async function insertEvidence(
   await db.runAsync(
     `INSERT INTO evidence (
       id, type, status, file_path, thumbnail_path, sha256_hash, file_size, mime_type,
-      captured_at, device_id, latitude, longitude, altitude, location_accuracy,
+      captured_at, device_id, latitude, longitude, altitude, location_accuracy, source_captured_at, source_metadata,
       title, description, tags, court_order_id, breach_clause,
       transcription, transcription_status,
       parent_id, is_original, version_number,
       created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
       evidence.type,
@@ -67,6 +69,8 @@ export async function insertEvidence(
       evidence.longitude ?? null,
       evidence.altitude ?? null,
       evidence.locationAccuracy ?? null,
+      evidence.sourceCapturedAt ?? null,
+      evidence.sourceMetadata ?? null,
       evidence.title ?? null,
       evidence.description ?? null,
       JSON.stringify(evidence.tags),
@@ -87,7 +91,7 @@ export async function insertEvidence(
 
 export async function getAllEvidence(): Promise<EvidenceItem[]> {
   const db = await getDatabase();
-  const rows = await db.getAllAsync('SELECT * FROM evidence ORDER BY captured_at DESC');
+  const rows = await db.getAllAsync('SELECT * FROM evidence ORDER BY captured_at ASC');
   return (rows as Row[]).map(rowToEvidence);
 }
 
@@ -100,7 +104,7 @@ export async function getEvidenceById(id: string): Promise<EvidenceItem | null> 
 export async function getEvidenceByType(type: EvidenceType): Promise<EvidenceItem[]> {
   const db = await getDatabase();
   const rows = await db.getAllAsync(
-    'SELECT * FROM evidence WHERE type = ? ORDER BY captured_at DESC',
+    'SELECT * FROM evidence WHERE type = ? ORDER BY captured_at ASC',
     [type]
   );
   return (rows as Row[]).map(rowToEvidence);
@@ -109,7 +113,7 @@ export async function getEvidenceByType(type: EvidenceType): Promise<EvidenceIte
 export async function getEvidenceByCourtOrder(courtOrderId: string): Promise<EvidenceItem[]> {
   const db = await getDatabase();
   const rows = await db.getAllAsync(
-    'SELECT * FROM evidence WHERE court_order_id = ? ORDER BY captured_at DESC',
+    'SELECT * FROM evidence WHERE court_order_id = ? ORDER BY captured_at ASC',
     [courtOrderId]
   );
   return (rows as Row[]).map(rowToEvidence);
@@ -182,7 +186,7 @@ export async function searchEvidence(query: string): Promise<EvidenceItem[]> {
   const rows = await db.getAllAsync(
     `SELECT * FROM evidence
      WHERE title LIKE ? OR description LIKE ? OR tags LIKE ? OR transcription LIKE ?
-     ORDER BY captured_at DESC`,
+     ORDER BY captured_at ASC`,
     [pattern, pattern, pattern, pattern]
   );
   return (rows as Row[]).map(rowToEvidence);

@@ -19,6 +19,8 @@ export interface EvidenceItem {
   longitude?: number;
   altitude?: number;
   locationAccuracy?: number;
+  sourceCapturedAt?: string;
+  sourceMetadata?: string; // JSON string containing import metadata extracted from source file
 
   // User-provided metadata
   title?: string;
@@ -101,6 +103,8 @@ export interface ForensicMetadata {
   locationAccuracy?: number;
   appVersion: string;
   captureMethod: 'in-app' | 'imported';
+  sourceCapturedAt?: string;
+  sourceMetadata?: Record<string, unknown>;
 }
 
 export interface BriefingReport {

@@ -103,7 +103,7 @@ export function CaptureScreen() {
   const importDocument = useCallback(async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: ['image/*', 'video/*', 'audio/*', 'application/pdf'],
+        type: '*/*',
         copyToCacheDirectory: true,
       });
 
@@ -118,12 +118,17 @@ export function CaptureScreen() {
       else if (mimeType.startsWith('video/')) type = 'video';
       else if (mimeType.startsWith('audio/')) type = 'audio';
 
-      const importResult = await importExternalFile(asset.uri, type, mimeType);
+      const importResult = await importExternalFile(asset.uri, type, mimeType, {
+        originalFileName: asset.name,
+        originalMimeType: mimeType,
+        originalFileSize: asset.size,
+        sourceCapturedAt: asset.lastModified ? new Date(asset.lastModified).toISOString() : undefined,
+      });
       await refreshEvidence();
 
       Alert.alert(
         'Evidence Imported',
-        `File hardened and locked.\nSHA-256: ${importResult.forensicMetadata.sha256Hash.substring(0, 16)}...`,
+        `File hardened and locked with source metadata stamping.\nSHA-256: ${importResult.forensicMetadata.sha256Hash.substring(0, 16)}...`,
         [
           { text: 'View', onPress: () => navigation.navigate('EvidenceDetail', { evidenceId: importResult.evidenceId }) },
           { text: 'OK' },
@@ -223,7 +228,7 @@ export function CaptureScreen() {
           {/* Import */}
           <TouchableOpacity style={styles.sideButton} onPress={importDocument}>
             <Ionicons name="folder-open" size={24} color={theme.colors.text} />
-            <Text style={styles.sideButtonText}>Import</Text>
+            <Text style={styles.sideButtonText}>Upload</Text>
           </TouchableOpacity>
 
           {/* Capture Button */}

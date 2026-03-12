@@ -72,19 +72,21 @@ export function VaultScreen() {
     setRefreshing(false);
   };
 
-  const filtered = evidence.filter(item => {
-    if (filter !== 'all' && item.type !== filter) return false;
-    if (search) {
-      const q = search.toLowerCase();
-      return (
-        item.title?.toLowerCase().includes(q) ||
-        item.description?.toLowerCase().includes(q) ||
-        item.tags.some(t => t.toLowerCase().includes(q)) ||
-        item.sha256Hash.includes(q)
-      );
-    }
-    return true;
-  });
+  const filtered = evidence
+    .filter(item => {
+      if (filter !== 'all' && item.type !== filter) return false;
+      if (search) {
+        const q = search.toLowerCase();
+        return (
+          item.title?.toLowerCase().includes(q) ||
+          item.description?.toLowerCase().includes(q) ||
+          item.tags.some(t => t.toLowerCase().includes(q)) ||
+          item.sha256Hash.includes(q)
+        );
+      }
+      return true;
+    })
+    .sort((a, b) => new Date(a.capturedAt).getTime() - new Date(b.capturedAt).getTime());
 
   const handlePress = async (item: EvidenceItem) => {
     await logAuditEvent('viewed', 'evidence', item.id);

@@ -2,6 +2,20 @@ import * as SQLite from 'expo-sqlite';
 
 let db: SQLite.SQLiteDatabase;
 
+
+async function ensureColumnExists(
+  database: SQLite.SQLiteDatabase,
+  tableName: string,
+  columnName: string,
+  definition: string
+): Promise<void> {
+  const columns = await database.getAllAsync(`PRAGMA table_info(${tableName})`) as Array<{ name?: string }>;
+  const hasColumn = columns.some(column => column.name === columnName);
+  if (!hasColumn) {
+    await database.execAsync(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${definition}`);
+  }
+}
+
 export async function getDatabase(): Promise<SQLite.SQLiteDatabase> {
   if (!db) {
     db = await SQLite.openDatabaseAsync('evidence_guardian.db');
@@ -32,6 +46,8 @@ export async function initDatabase(): Promise<void> {
       longitude REAL,
       altitude REAL,
       location_accuracy REAL,
+      source_captured_at TEXT,
+      source_metadata TEXT,
 
       title TEXT,
       description TEXT,
@@ -211,6 +227,7 @@ export async function initDatabase(): Promise<void> {
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
+
     CREATE INDEX IF NOT EXISTS idx_evidence_type ON evidence(type);
     CREATE INDEX IF NOT EXISTS idx_evidence_status ON evidence(status);
     CREATE INDEX IF NOT EXISTS idx_evidence_captured_at ON evidence(captured_at);
@@ -229,4 +246,7 @@ export async function initDatabase(): Promise<void> {
     CREATE INDEX IF NOT EXISTS idx_legislation_update_log_legislation ON legislation_update_log(legislation_id);
     CREATE INDEX IF NOT EXISTS idx_legislation_update_log_timestamp ON legislation_update_log(timestamp);
   `);
+
+  await ensureColumnExists(database, 'evidence', 'source_captured_at', 'TEXT');
+  await ensureColumnExists(database, 'evidence', 'source_metadata', 'TEXT');
 }
