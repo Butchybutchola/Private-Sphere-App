@@ -6,4 +6,7 @@ module.exports = {
   setupFiles: ['./src/__tests__/setup.ts'],
   testMatch: ['**/src/__tests__/**/*.test.ts', '**/src/__tests__/**/*.test.tsx'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
+  // Prevent real AbortController timeouts from keeping the worker alive
+  fakeTimers: { enableGlobally: false },
+  forceExit: true,
 };

@@ -18,6 +18,7 @@ import { getCurrentLocation } from './locationService';
 import { getDeviceId, getAppVersion } from './deviceInfo';
 import { insertEvidence } from '../database/evidenceRepository';
 import { logAuditEvent } from '../database/auditRepository';
+import { logCoCEvent } from '../database/chainOfCustodyRepository';
 import { EvidenceType, ForensicMetadata } from '../types';
 
 const EVIDENCE_DIR = `${FileSystem.documentDirectory}evidence/`;
@@ -130,6 +131,15 @@ export async function hardenAndStoreEvidence(
     hasLocation: !!location,
   });
 
+  // Step 11: Record first chain-of-custody event (CAPTURE)
+  await logCoCEvent(evidenceId, 'CAPTURE', sha256Hash, {
+    type,
+    ntpServer: ntpResult.serverUsed,
+    ntpVerified: ntpResult.serverUsed !== 'device_fallback',
+    hasLocation: !!location,
+    captureMethod: 'in-app',
+  }, 'SYSTEM');
+
   return { evidenceId, forensicMetadata };
 }
 
@@ -163,14 +173,21 @@ export async function verifyEvidenceIntegrity(evidenceId: string): Promise<{
   }
 
   const currentHash = await hashFile(evidence.filePath);
+  const isValid = currentHash === evidence.sha256Hash;
 
   await logAuditEvent('viewed', 'evidence', evidenceId, {
     action: 'integrity_check',
-    result: currentHash === evidence.sha256Hash ? 'valid' : 'tampered',
+    result: isValid ? 'valid' : 'tampered',
   });
 
+  // Record VERIFY event with the freshly-computed hash
+  await logCoCEvent(evidenceId, 'VERIFY', currentHash, {
+    valid: isValid,
+    originalHash: evidence.sha256Hash,
+  }, 'SYSTEM');
+
   return {
-    valid: currentHash === evidence.sha256Hash,
+    valid: isValid,
     currentHash,
     originalHash: evidence.sha256Hash,
   };

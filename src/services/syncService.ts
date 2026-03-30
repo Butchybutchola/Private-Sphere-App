@@ -34,6 +34,7 @@ import { uploadEvidenceFile, UploadProgress } from './cloudStorageService';
 import { getAllEvidence } from '../database/evidenceRepository';
 import { getAllCourtOrders } from '../database/courtOrderRepository';
 import { getAuditLog } from '../database/auditRepository';
+import { logCoCEvent } from '../database/chainOfCustodyRepository';
 import { EvidenceItem, CourtOrder, AuditLogEntry } from '../types';
 
 export type SyncStatus = 'idle' | 'syncing' | 'success' | 'error' | 'offline';
@@ -73,7 +74,11 @@ async function pushEvidenceToCloud(
     onUploadProgress ? (p) => onUploadProgress(evidence.id, p) : undefined
   );
 
-  // Push metadata to Firestore
+  // Push non-sensitive metadata to Firestore.
+  // title, description, tags, breachClause and transcription are intentionally
+  // omitted — they are encrypted at rest in local SQLite and must not be
+  // stored in cleartext in Firestore. The encrypted file in Firebase Storage
+  // is the authoritative source of that content.
   await setDoc(getUserDoc('evidence', evidence.id), {
     type: evidence.type,
     status: evidence.status,
@@ -86,12 +91,7 @@ async function pushEvidenceToCloud(
     longitude: evidence.longitude ?? null,
     altitude: evidence.altitude ?? null,
     locationAccuracy: evidence.locationAccuracy ?? null,
-    title: evidence.title ?? null,
-    description: evidence.description ?? null,
-    tags: evidence.tags,
     courtOrderId: evidence.courtOrderId ?? null,
-    breachClause: evidence.breachClause ?? null,
-    transcription: evidence.transcription ?? null,
     transcriptionStatus: evidence.transcriptionStatus ?? null,
     parentId: evidence.parentId ?? null,
     isOriginal: evidence.isOriginal,
@@ -100,6 +100,11 @@ async function pushEvidenceToCloud(
     localUpdatedAt: evidence.updatedAt,
     syncedAt: serverTimestamp(),
   }, { merge: true });
+
+  // Record BACKUP chain-of-custody event
+  await logCoCEvent(evidence.id, 'BACKUP', evidence.sha256Hash, {
+    destination: 'firebase',
+  }, 'SYSTEM');
 }
 
 async function pushCourtOrderToCloud(order: CourtOrder): Promise<void> {
@@ -140,12 +145,15 @@ async function pushAuditLogToCloud(entries: AuditLogEntry[]): Promise<void> {
 
     for (const entry of chunk) {
       const entryRef = doc(db, 'users', user.uid, 'audit_log', entry.id);
+      // metadata is intentionally omitted: it can contain plaintext evidence
+      // content (title, description, breachDescription, tags) which must not
+      // be stored in cleartext in Firestore. The action/resourceId pair is
+      // sufficient for cross-device sync of the audit trail structure.
       batch.set(entryRef, {
         userId: entry.userId,
         action: entry.action,
         resourceType: entry.resourceType,
         resourceId: entry.resourceId,
-        metadata: entry.metadata ?? null,
         timestamp: entry.timestamp,
         syncedAt: serverTimestamp(),
       }, { merge: true });

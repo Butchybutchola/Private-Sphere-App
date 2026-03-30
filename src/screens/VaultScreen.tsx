@@ -4,6 +4,8 @@ import {
   StyleSheet, RefreshControl,
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../navigation/AppNavigator';
 import { Ionicons } from '@expo/vector-icons';
 import { useDatabase } from '../context/DatabaseContext';
 import { EvidenceItem, EvidenceType } from '../types';
@@ -58,7 +60,7 @@ export function VaultScreen() {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<EvidenceType | 'all'>('all');
   const [refreshing, setRefreshing] = useState(false);
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
   useFocusEffect(
     useCallback(() => {

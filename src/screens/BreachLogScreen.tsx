@@ -3,6 +3,9 @@ import {
   View, Text, TouchableOpacity, TextInput, StyleSheet, Alert, ScrollView,
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RouteProp } from '@react-navigation/native';
+import { RootStackParamList } from '../navigation/AppNavigator';
 import { Ionicons } from '@expo/vector-icons';
 import { useDatabase } from '../context/DatabaseContext';
 import { insertBreachLog, getClausesForOrder } from '../database/courtOrderRepository';
@@ -13,8 +16,8 @@ import { CourtOrderClause } from '../types';
 import { theme } from '../theme';
 
 export function BreachLogScreen() {
-  const route = useRoute<any>();
-  const navigation = useNavigation<any>();
+  const route = useRoute<RouteProp<RootStackParamList, 'BreachLog'>>();
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const { evidenceId } = route.params;
   const { courtOrders, refreshEvidence } = useDatabase();
 

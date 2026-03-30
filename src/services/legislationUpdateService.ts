@@ -3,7 +3,7 @@
  *
  * Polls legislation sources for updates using:
  * - QLD API (JSON endpoint)
- * - NSW/WA RSS feeds
+ * - NSW/WA RSS feeds (with proper XML item extraction)
  * - Federal legislation.gov.au hash-based change detection
  * - AustLII fallback for other jurisdictions
  *
@@ -13,18 +13,23 @@
 
 import {
   getAllLegislation,
-  getLegislationById,
   updateLegislationHash,
   addUpdateLog,
   addLegislationUpdate,
   getLastCheckTime,
 } from '../database/legislationRepository';
 import { Legislation } from '../types';
+import { digestStringAsync, CryptoDigestAlgorithm } from 'expo-crypto';
 
 // ---- Configuration ----
 
-/** Minimum interval between full update checks (ms) - default 7 days */
+/** Minimum interval between full update checks (ms) — default 7 days */
 const MIN_CHECK_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000;
+
+/** Minimum interval between forced checks to prevent rapid re-calls (ms) — 60 seconds */
+const MIN_FORCE_INTERVAL_MS = 60 * 1000;
+
+let lastForcedCheckTime: number | null = null;
 
 /** Known RSS feed URLs for state legislation updates */
 const RSS_FEEDS: Record<string, string> = {
@@ -32,13 +37,7 @@ const RSS_FEEDS: Record<string, string> = {
   WA: 'https://www.legislation.wa.gov.au/legislation/statutes.nsf/feeds.html',
 };
 
-/** QLD API configuration */
-const QLD_API_BASE = 'https://api.legislation.qld.gov.au/v1';
-
-/** Federal legislation browse page for polling */
-const FEDERAL_BROWSE_URL = 'https://www.legislation.gov.au/browse';
-
-// ---- Public API ----
+// ---- Public types ----
 
 export interface UpdateCheckResult {
   legislationId: string;
@@ -49,18 +48,34 @@ export interface UpdateCheckResult {
   error?: string;
 }
 
+export interface RssItem {
+  title: string;
+  link: string;
+  description: string;
+  pubDate?: string;
+  guid?: string;
+}
+
+// ---- Public API ----
+
 /**
  * Check all legislation for updates.
  * Returns results for each item checked.
- * Safe to call frequently - skips if last check was within MIN_CHECK_INTERVAL_MS.
+ * Safe to call frequently — skips if last check was within MIN_CHECK_INTERVAL_MS.
  */
 export async function checkForUpdates(force = false): Promise<UpdateCheckResult[]> {
-  if (!force) {
+  if (force) {
+    // Even forced calls are rate-limited to prevent rapid successive re-checks
+    if (lastForcedCheckTime !== null && Date.now() - lastForcedCheckTime < MIN_FORCE_INTERVAL_MS) {
+      return [];
+    }
+    lastForcedCheckTime = Date.now();
+  } else {
     const lastCheck = await getLastCheckTime();
     if (lastCheck) {
       const elapsed = Date.now() - new Date(lastCheck).getTime();
       if (elapsed < MIN_CHECK_INTERVAL_MS) {
-        return []; // Too soon, skip
+        return [];
       }
     }
   }
@@ -68,6 +83,7 @@ export async function checkForUpdates(force = false): Promise<UpdateCheckResult[
   const allLegislation = await getAllLegislation();
   const results: UpdateCheckResult[] = [];
 
+  // Check each legislation item, throttled to avoid hammering external APIs
   for (const item of allLegislation) {
     try {
       const result = await checkSingleLegislation(item);
@@ -81,6 +97,9 @@ export async function checkForUpdates(force = false): Promise<UpdateCheckResult[
         error: err instanceof Error ? err.message : 'Unknown error',
       });
     }
+
+    // Small delay between checks to be a polite API consumer
+    await sleep(250);
   }
 
   return results;
@@ -88,37 +107,35 @@ export async function checkForUpdates(force = false): Promise<UpdateCheckResult[
 
 /**
  * Check a single legislation item for updates.
- * Uses the appropriate method based on jurisdiction.
+ * Uses the appropriate strategy based on jurisdiction.
  */
 async function checkSingleLegislation(item: Legislation): Promise<UpdateCheckResult> {
-  const baseResult = {
+  const base = {
     legislationId: item.id,
     shortTitle: item.shortTitle,
     jurisdiction: item.jurisdiction,
   };
 
-  // Choose strategy based on jurisdiction
   if (item.jurisdiction === 'QLD' && item.fullTextUrl?.includes('api.legislation.qld.gov.au')) {
-    return checkViaQldApi(item, baseResult);
+    return checkViaQldApi(item, base);
   }
 
   if (item.jurisdiction === 'Federal') {
-    return checkViaFetchHash(item, baseResult);
+    return checkViaFetchHash(item, base);
   }
 
   if (RSS_FEEDS[item.jurisdiction]) {
-    return checkViaRssFeed(item, baseResult);
+    return checkViaRssFeed(item, base);
   }
 
-  // Default: fetch page and compare hash
-  return checkViaFetchHash(item, baseResult);
+  return checkViaFetchHash(item, base);
 }
 
 // ---- QLD API Strategy ----
 
 async function checkViaQldApi(
   item: Legislation,
-  baseResult: Pick<UpdateCheckResult, 'legislationId' | 'shortTitle' | 'jurisdiction'>,
+  base: Pick<UpdateCheckResult, 'legislationId' | 'shortTitle' | 'jurisdiction'>,
 ): Promise<UpdateCheckResult> {
   try {
     const response = await fetch(item.fullTextUrl!, {
@@ -127,7 +144,7 @@ async function checkViaQldApi(
     });
 
     if (!response.ok) {
-      return { ...baseResult, changed: false, error: `QLD API returned ${response.status}` };
+      return { ...base, changed: false, error: `QLD API returned ${response.status}` };
     }
 
     const data = await response.json();
@@ -136,7 +153,6 @@ async function checkViaQldApi(
     const newVersionDate = data?.version_date || data?.lastAmended || undefined;
 
     if (previousHash && previousHash !== newHash) {
-      // Content changed
       await updateLegislationHash(item.id, newHash, newVersionDate);
       await addUpdateLog({
         legislationId: item.id,
@@ -149,16 +165,15 @@ async function checkViaQldApi(
       });
       await addLegislationUpdate({
         legislationId: item.id,
-        title: `${item.shortTitle} - Content Update Detected`,
-        summary: `A change was detected in the ${item.shortTitle} via the QLD legislation API. Please verify at the official source.`,
+        title: `${item.shortTitle} — Content Update Detected`,
+        summary: `A change was detected in ${item.shortTitle} via the QLD legislation API. Please verify at the official source.`,
         sourceUrl: item.fullTextUrl!,
         publishedAt: new Date().toISOString(),
         isRead: false,
       });
-      return { ...baseResult, changed: true, changeType: 'hash_mismatch' };
+      return { ...base, changed: true, changeType: 'hash_mismatch' };
     }
 
-    // No change - still update last_checked
     await updateLegislationHash(item.id, newHash || previousHash || '', newVersionDate);
     await addUpdateLog({
       legislationId: item.id,
@@ -167,9 +182,9 @@ async function checkViaQldApi(
       newHash,
       sourceUrl: item.fullTextUrl!,
     });
-    return { ...baseResult, changed: false };
+    return { ...base, changed: false };
   } catch (err) {
-    return { ...baseResult, changed: false, error: err instanceof Error ? err.message : 'QLD API error' };
+    return { ...base, changed: false, error: err instanceof Error ? err.message : 'QLD API error' };
   }
 }
 
@@ -177,7 +192,7 @@ async function checkViaQldApi(
 
 async function checkViaFetchHash(
   item: Legislation,
-  baseResult: Pick<UpdateCheckResult, 'legislationId' | 'shortTitle' | 'jurisdiction'>,
+  base: Pick<UpdateCheckResult, 'legislationId' | 'shortTitle' | 'jurisdiction'>,
 ): Promise<UpdateCheckResult> {
   try {
     const targetUrl = item.fullTextUrl || item.url;
@@ -186,7 +201,7 @@ async function checkViaFetchHash(
     });
 
     if (!response.ok) {
-      return { ...baseResult, changed: false, error: `HTTP ${response.status}` };
+      return { ...base, changed: false, error: `HTTP ${response.status}` };
     }
 
     const text = await response.text();
@@ -204,16 +219,15 @@ async function checkViaFetchHash(
       });
       await addLegislationUpdate({
         legislationId: item.id,
-        title: `${item.shortTitle} - Update Detected`,
+        title: `${item.shortTitle} — Update Detected`,
         summary: `Content change detected for ${item.title}. Please verify at the official source: ${item.url}`,
         sourceUrl: targetUrl,
         publishedAt: new Date().toISOString(),
         isRead: false,
       });
-      return { ...baseResult, changed: true, changeType: 'hash_mismatch' };
+      return { ...base, changed: true, changeType: 'hash_mismatch' };
     }
 
-    // First check or no change
     await updateLegislationHash(item.id, newHash);
     await addUpdateLog({
       legislationId: item.id,
@@ -222,9 +236,9 @@ async function checkViaFetchHash(
       newHash,
       sourceUrl: targetUrl,
     });
-    return { ...baseResult, changed: false };
+    return { ...base, changed: false };
   } catch (err) {
-    return { ...baseResult, changed: false, error: err instanceof Error ? err.message : 'Fetch error' };
+    return { ...base, changed: false, error: err instanceof Error ? err.message : 'Fetch error' };
   }
 }
 
@@ -232,33 +246,31 @@ async function checkViaFetchHash(
 
 async function checkViaRssFeed(
   item: Legislation,
-  baseResult: Pick<UpdateCheckResult, 'legislationId' | 'shortTitle' | 'jurisdiction'>,
+  base: Pick<UpdateCheckResult, 'legislationId' | 'shortTitle' | 'jurisdiction'>,
 ): Promise<UpdateCheckResult> {
   try {
     const feedUrl = RSS_FEEDS[item.jurisdiction];
     if (!feedUrl) {
-      return checkViaFetchHash(item, baseResult);
+      return checkViaFetchHash(item, base);
     }
 
-    const response = await fetch(feedUrl, {
-      signal: AbortSignal.timeout(15000),
-    });
+    const response = await fetch(feedUrl, { signal: AbortSignal.timeout(15000) });
 
     if (!response.ok) {
-      // Fallback to hash check
-      return checkViaFetchHash(item, baseResult);
+      return checkViaFetchHash(item, base);
     }
 
-    const text = await response.text();
+    const xmlText = await response.text();
+    const feedItems = parseRssFeed(xmlText);
 
-    // Search for the act name in RSS content (simple text match)
-    const actNamePattern = item.title.replace(/\(.*?\)/g, '').trim().toLowerCase();
-    const hasMatch = text.toLowerCase().includes(actNamePattern);
+    // Match feed items against this legislation by title keywords
+    const matchedItem = findMatchingFeedItem(item, feedItems);
 
-    if (hasMatch) {
-      // RSS mentions this act - likely an update
+    if (matchedItem) {
+      // An RSS item matching this act was found — compute hash to detect if it's new
+      const itemSignature = `${matchedItem.title}|${matchedItem.link}|${matchedItem.pubDate ?? ''}`;
+      const newHash = await computeHash(itemSignature);
       const previousHash = item.contentHash;
-      const newHash = await computeHash(text + item.id);
 
       if (previousHash !== newHash) {
         await updateLegislationHash(item.id, newHash);
@@ -271,48 +283,161 @@ async function checkViaRssFeed(
         });
         await addLegislationUpdate({
           legislationId: item.id,
-          title: `${item.shortTitle} - RSS Update`,
-          summary: `The ${item.jurisdiction} legislation RSS feed mentions an update to ${item.shortTitle}. Verify at the official source.`,
-          sourceUrl: feedUrl,
-          publishedAt: new Date().toISOString(),
+          title: matchedItem.title || `${item.shortTitle} — RSS Update`,
+          summary:
+            matchedItem.description ||
+            `The ${item.jurisdiction} legislation RSS feed reports an update to ${item.shortTitle}. Verify at the official source.`,
+          sourceUrl: matchedItem.link || feedUrl,
+          publishedAt: matchedItem.pubDate || new Date().toISOString(),
           isRead: false,
         });
-        return { ...baseResult, changed: true, changeType: 'rss_update' };
+        return { ...base, changed: true, changeType: 'rss_update' };
       }
     }
 
-    // No relevant updates in RSS
+    // No new updates for this act in the feed
     await addUpdateLog({
       legislationId: item.id,
       changeType: 'no_change',
       sourceUrl: feedUrl,
     });
-    return { ...baseResult, changed: false };
+    return { ...base, changed: false };
   } catch {
-    // Fallback to hash check
-    return checkViaFetchHash(item, baseResult);
+    return checkViaFetchHash(item, base);
   }
 }
 
-// ---- Utility ----
+// ---- RSS XML Parsing ----
 
 /**
- * Compute a simple hash of content for change detection.
- * Uses Web Crypto API (available in React Native via expo-crypto).
+ * Parse an RSS 2.0 or Atom feed XML string into a list of items.
+ * Uses lightweight regex extraction — no DOMParser dependency.
+ */
+export function parseRssFeed(xml: string): RssItem[] {
+  const items: RssItem[] = [];
+  const isAtom = xml.includes('<feed') && xml.includes('xmlns="http://www.w3.org/2005/Atom"');
+
+  if (isAtom) {
+    return parseAtomFeed(xml);
+  }
+
+  // RSS 2.0: extract <item>...</item> blocks
+  const itemPattern = /<item[^>]*>([\s\S]*?)<\/item>/gi;
+  let match: RegExpExecArray | null;
+
+  while ((match = itemPattern.exec(xml)) !== null) {
+    const block = match[1];
+    items.push({
+      title: extractXmlText(block, 'title'),
+      link: extractXmlText(block, 'link') || extractXmlCdata(block, 'link'),
+      description: extractXmlCdata(block, 'description') || extractXmlText(block, 'description'),
+      pubDate: extractXmlText(block, 'pubDate'),
+      guid: extractXmlText(block, 'guid') || extractXmlCdata(block, 'guid'),
+    });
+  }
+
+  return items;
+}
+
+function parseAtomFeed(xml: string): RssItem[] {
+  const items: RssItem[] = [];
+  const entryPattern = /<entry[^>]*>([\s\S]*?)<\/entry>/gi;
+  let match: RegExpExecArray | null;
+
+  while ((match = entryPattern.exec(xml)) !== null) {
+    const block = match[1];
+    // Atom link: <link href="..." />
+    const linkMatch = block.match(/<link[^>]+href="([^"]+)"/i);
+    items.push({
+      title: extractXmlText(block, 'title'),
+      link: linkMatch?.[1] || '',
+      description: extractXmlText(block, 'summary') || extractXmlText(block, 'content'),
+      pubDate: extractXmlText(block, 'updated') || extractXmlText(block, 'published'),
+      guid: extractXmlText(block, 'id'),
+    });
+  }
+
+  return items;
+}
+
+/** Extract text content of a simple XML element (no CDATA). */
+function extractXmlText(xml: string, tag: string): string {
+  const match = xml.match(new RegExp(`<${tag}[^>]*>([^<]*)<\\/${tag}>`, 'i'));
+  return match ? decodeHtmlEntities(match[1].trim()) : '';
+}
+
+/** Extract text from a CDATA-wrapped XML element. */
+function extractXmlCdata(xml: string, tag: string): string {
+  const match = xml.match(new RegExp(`<${tag}[^>]*>\\s*<!\\[CDATA\\[([\\s\\S]*?)\\]\\]>\\s*<\\/${tag}>`, 'i'));
+  return match ? match[1].trim() : '';
+}
+
+function decodeHtmlEntities(text: string): string {
+  return text
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&#(\d+);/g, (_, dec: string) => String.fromCharCode(Number(dec)))
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex: string) => String.fromCharCode(parseInt(hex, 16)));
+}
+
+/**
+ * Find the RSS item that most likely corresponds to a legislation record.
+ * Matches on significant words from the short title (ignoring common words).
+ */
+function findMatchingFeedItem(item: Legislation, feedItems: RssItem[]): RssItem | undefined {
+  const STOP_WORDS = new Set(['act', 'the', 'of', 'and', 'for', 'a', 'in', 'to', 'no']);
+
+  // Extract significant keywords from the legislation short title
+  const keywords = item.shortTitle
+    .toLowerCase()
+    .replace(/[()[\]]/g, '')
+    .split(/\s+/)
+    .filter(w => w.length > 2 && !STOP_WORDS.has(w));
+
+  if (keywords.length === 0) return undefined;
+
+  // Score each feed item: count how many keywords appear in the title
+  let bestScore = 0;
+  let bestItem: RssItem | undefined;
+
+  for (const feedItem of feedItems) {
+    const titleLower = feedItem.title.toLowerCase();
+    const score = keywords.filter(kw => titleLower.includes(kw)).length;
+
+    // Require at least half the keywords to match, and at least 2 matches
+    if (score >= Math.max(2, Math.ceil(keywords.length / 2)) && score > bestScore) {
+      bestScore = score;
+      bestItem = feedItem;
+    }
+  }
+
+  return bestItem;
+}
+
+// ---- Utilities ----
+
+/**
+ * Compute a SHA-256 hash of content for change detection.
  */
 async function computeHash(content: string): Promise<string> {
   try {
-    // Try expo-crypto if available
-    const { digestStringAsync, CryptoDigestAlgorithm } = await import('expo-crypto');
-    return await digestStringAsync(CryptoDigestAlgorithm.SHA256, content);
+    return digestStringAsync(CryptoDigestAlgorithm.SHA256, content);
   } catch {
-    // Fallback: simple string hash for environments where expo-crypto isn't available
-    let hash = 0;
+    // Fallback: djb2 hash for environments where expo-crypto isn't available
+    let h = 5381;
     for (let i = 0; i < content.length; i++) {
-      const char = content.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash |= 0; // Convert to 32bit integer
+      h = ((h << 5) + h) ^ content.charCodeAt(i);
+      h |= 0;
     }
-    return 'simple-' + Math.abs(hash).toString(16);
+    return 'djb2-' + (h >>> 0).toString(16).padStart(8, '0');
   }
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }

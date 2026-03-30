@@ -4,13 +4,18 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as LocalAuthentication from 'expo-local-authentication';
+import * as SecureStore from 'expo-secure-store';
 import { getLastSyncInfo, syncNTPOffset } from '../services/ntpTime';
 import { isEncryptionConfigured } from '../services/encryptionService';
+import { rotateEvidenceEncryption } from '../database/evidenceRepository';
 import { setWhisperApiKey, getWhisperApiKey } from '../services/transcriptionService';
 import { getAuditLog } from '../database/auditRepository';
 import { AuditLogEntry } from '../types';
 import { theme } from '../theme';
 import { format } from 'date-fns';
+
+const ICON_DISGUISE_KEY = 'evidence_guardian_icon_disguise';
+const BIOMETRIC_ENABLED_KEY = 'evidence_guardian_biometric_enabled';
 
 const ICON_DISGUISES = [
   { id: null, name: 'Default (Evidence Guardian)', icon: 'shield-checkmark' },
@@ -30,6 +35,7 @@ export function SettingsScreen() {
   const [showWhisperKey, setShowWhisperKey] = useState(false);
   const [auditLog, setAuditLog] = useState<AuditLogEntry[]>([]);
   const [showAuditLog, setShowAuditLog] = useState(false);
+  const [rotatingKey, setRotatingKey] = useState(false);
 
   useEffect(() => {
     loadSettings();
@@ -47,6 +53,13 @@ export function SettingsScreen() {
 
     const key = await getWhisperApiKey();
     if (key) setWhisperKey('••••••••••••');
+
+    const savedIcon = await SecureStore.getItemAsync(ICON_DISGUISE_KEY);
+    setSelectedIcon(savedIcon || null);
+
+    const biometricPref = await SecureStore.getItemAsync(BIOMETRIC_ENABLED_KEY);
+    // Default to enabled if never set
+    setBiometricEnabled(biometricPref !== 'false');
   }
 
   const handleSyncNTP = async () => {
@@ -62,6 +75,37 @@ export function SettingsScreen() {
     Alert.alert('Saved', 'Whisper API key stored securely.');
     setWhisperKey('••••••••••••');
     setShowWhisperKey(false);
+  };
+
+  const handleRotateKey = () => {
+    Alert.alert(
+      'Rotate Encryption Key',
+      'This generates a new AES-256 key and re-encrypts all evidence records. The app will be briefly unresponsive. Continue?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Rotate',
+          style: 'destructive',
+          onPress: async () => {
+            setRotatingKey(true);
+            try {
+              const { rotatedCount, newKeyId } = await rotateEvidenceEncryption();
+              Alert.alert(
+                'Key Rotated',
+                `${rotatedCount} record(s) re-encrypted.\nNew key ID: ${newKeyId.substring(0, 16)}...`,
+              );
+            } catch (err) {
+              Alert.alert(
+                'Rotation Failed',
+                err instanceof Error ? err.message : 'Unknown error. The previous key is still active.',
+              );
+            } finally {
+              setRotatingKey(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleLoadAuditLog = async () => {
@@ -87,7 +131,10 @@ export function SettingsScreen() {
         </View>
         <Switch
           value={biometricEnabled}
-          onValueChange={setBiometricEnabled}
+          onValueChange={async (val) => {
+            setBiometricEnabled(val);
+            await SecureStore.setItemAsync(BIOMETRIC_ENABLED_KEY, val ? 'true' : 'false');
+          }}
           trackColor={{ true: theme.colors.primary, false: theme.colors.border }}
           disabled={!biometricAvailable}
         />
@@ -106,6 +153,25 @@ export function SettingsScreen() {
         <View style={[styles.statusDot, { backgroundColor: encryptionReady ? theme.colors.success : theme.colors.warning }]} />
       </View>
 
+      <TouchableOpacity
+        style={[styles.settingRow, rotatingKey && styles.settingRowDisabled]}
+        onPress={handleRotateKey}
+        disabled={rotatingKey}
+      >
+        <View style={styles.settingInfo}>
+          <Ionicons name="refresh-circle" size={22} color={theme.colors.danger} />
+          <View>
+            <Text style={styles.settingLabel}>Rotate Encryption Key</Text>
+            <Text style={styles.settingDesc}>
+              {rotatingKey ? 'Re-encrypting all evidence...' : 'Generate new key & re-encrypt all records'}
+            </Text>
+          </View>
+        </View>
+        {rotatingKey
+          ? <Ionicons name="hourglass" size={20} color={theme.colors.textMuted} />
+          : <Ionicons name="chevron-forward" size={18} color={theme.colors.textMuted} />}
+      </TouchableOpacity>
+
       {/* Icon Disguise */}
       <Text style={styles.sectionTitle}>App Disguise</Text>
       <Text style={styles.sectionDesc}>
@@ -116,9 +182,10 @@ export function SettingsScreen() {
         <TouchableOpacity
           key={disguise.id ?? 'default'}
           style={[styles.disguiseOption, selectedIcon === disguise.id && styles.disguiseOptionActive]}
-          onPress={() => {
+          onPress={async () => {
             setSelectedIcon(disguise.id);
-            Alert.alert('Icon Changed', `App icon will appear as "${disguise.name}". Note: Icon changes require app restart on some devices.`);
+            await SecureStore.setItemAsync(ICON_DISGUISE_KEY, disguise.id ?? '');
+            Alert.alert('Preference Saved', `App disguise set to "${disguise.name}". Restart the app to apply the change.`);
           }}
         >
           <Ionicons
@@ -257,6 +324,9 @@ const styles = StyleSheet.create({
     padding: theme.spacing.md,
     borderRadius: theme.borderRadius.md,
     marginBottom: theme.spacing.sm,
+  },
+  settingRowDisabled: {
+    opacity: 0.5,
   },
   settingInfo: {
     flexDirection: 'row',

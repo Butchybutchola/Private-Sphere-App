@@ -1,31 +1,36 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, TextInput,
   StyleSheet, Alert, Image, ActivityIndicator,
 } from 'react-native';
-import { useRoute, useNavigation } from '@react-navigation/native';
+import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../navigation/AppNavigator';
 import { Ionicons } from '@expo/vector-icons';
 import { Video, ResizeMode, Audio } from 'expo-av';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
 import { EvidenceItem } from '../types';
-import { getEvidenceById, updateEvidenceMetadata } from '../database/evidenceRepository';
+import { getEvidenceById, updateEvidenceMetadata, getEvidenceVersions } from '../database/evidenceRepository';
 import { verifyEvidenceIntegrity } from '../services/captureEngine';
 import { transcribeAudio } from '../services/transcriptionService';
 import { logAuditEvent } from '../database/auditRepository';
+import { logCoCEvent } from '../database/chainOfCustodyRepository';
 import { useDatabase } from '../context/DatabaseContext';
 import { theme } from '../theme';
 import { format } from 'date-fns';
 
 export function EvidenceDetailScreen() {
-  const route = useRoute<any>();
-  const navigation = useNavigation<any>();
+  const route = useRoute<RouteProp<RootStackParamList, 'EvidenceDetail'>>();
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const { evidenceId } = route.params;
   const { refreshEvidence } = useDatabase();
 
   const [evidence, setEvidence] = useState<EvidenceItem | null>(null);
+  const [versions, setVersions] = useState<EvidenceItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [verifying, setVerifying] = useState(false);
+  const viewLoggedRef = useRef(false);
   const [integrityStatus, setIntegrityStatus] = useState<'unknown' | 'valid' | 'tampered'>('unknown');
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
@@ -47,6 +52,14 @@ export function EvidenceDetailScreen() {
       setEvidence(item);
       setEditTitle(item.title || '');
       setEditDescription(item.description || '');
+      const versionList = await getEvidenceVersions(item.isOriginal ? item.id : (item.parentId ?? item.id));
+      setVersions(versionList);
+
+      // Log VIEW chain-of-custody event once per screen mount
+      if (!viewLoggedRef.current) {
+        viewLoggedRef.current = true;
+        logCoCEvent(evidenceId, 'VIEW', item.sha256Hash).catch(() => {});
+      }
     }
     setLoading(false);
   }, [evidenceId]);
@@ -126,6 +139,7 @@ export function EvidenceDetailScreen() {
       }
 
       await logAuditEvent('exported', 'evidence', evidence.id);
+      await logCoCEvent(evidence.id, 'EXPORT', evidence.sha256Hash, { method: 'share' });
       await Sharing.shareAsync(evidence.filePath, {
         mimeType: evidence.mimeType,
         dialogTitle: `Share Evidence: ${evidence.title || 'Untitled'}`,
@@ -452,6 +466,36 @@ export function EvidenceDetailScreen() {
           <Text style={styles.noTagsText}>No tags. Tap + to add tags.</Text>
         )}
       </View>
+
+      {/* Version History */}
+      {versions.length > 1 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Version History ({versions.length})</Text>
+          {versions.map((v) => (
+            <TouchableOpacity
+              key={v.id}
+              style={[styles.versionRow, v.id === evidence.id && styles.versionRowCurrent]}
+              onPress={() => {
+                if (v.id !== evidence.id) {
+                  navigation.replace('EvidenceDetail', { evidenceId: v.id });
+                }
+              }}
+              disabled={v.id === evidence.id}
+            >
+              <View style={styles.versionInfo}>
+                <Text style={styles.versionLabel}>
+                  {v.isOriginal ? 'Original (Master)' : `Version ${v.versionNumber}`}
+                  {v.id === evidence.id ? '  ← current' : ''}
+                </Text>
+                <Text style={styles.versionDate}>
+                  {format(new Date(v.capturedAt), 'yyyy-MM-dd HH:mm:ss')}
+                </Text>
+              </View>
+              <Text style={styles.versionHash}>{v.sha256Hash.substring(0, 12)}…</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
     </ScrollView>
   );
 }
@@ -726,5 +770,39 @@ const styles = StyleSheet.create({
     color: theme.colors.textMuted,
     fontSize: theme.fontSize.sm,
     fontStyle: 'italic',
+  },
+  versionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: theme.colors.surface,
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
+    marginBottom: theme.spacing.xs,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  versionRowCurrent: {
+    borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.primary + '10',
+  },
+  versionInfo: {
+    flex: 1,
+  },
+  versionLabel: {
+    color: theme.colors.text,
+    fontSize: theme.fontSize.sm,
+    fontWeight: '600',
+  },
+  versionDate: {
+    color: theme.colors.textMuted,
+    fontSize: theme.fontSize.xs,
+    marginTop: 2,
+  },
+  versionHash: {
+    color: theme.colors.textMuted,
+    fontSize: theme.fontSize.xs,
+    fontFamily: 'monospace',
+    marginLeft: theme.spacing.sm,
   },
 });

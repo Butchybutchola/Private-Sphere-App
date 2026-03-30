@@ -220,6 +220,57 @@ export interface LegislationUpdateLog {
   timestamp: string;
 }
 
+// ---- Chain of Custody ----
+
+export type CoCEventType = 'CAPTURE' | 'VIEW' | 'EXPORT' | 'VERIFY' | 'BACKUP' | 'REPORT_INCLUDE' | 'SHARE';
+export type CoCActorType = 'USER' | 'SYSTEM' | 'LAWYER' | 'WITNESS';
+
+export interface ChainOfCustodyEvent {
+  id: string;
+  evidenceId: string;
+  eventType: CoCEventType;
+  timestamp: string;
+  actorType: CoCActorType;
+  actorId: string;
+  /** SHA-256 of the evidence file re-recorded at the time of this event */
+  hashAtEvent: string;
+  details: Record<string, unknown> | null;
+  createdAt: string;
+}
+
+// ---- Witness Statements ----
+
+export type WitnessStatementType = 'TEXT' | 'AUDIO' | 'VIDEO';
+export type WitnessStatementStatus = 'PENDING' | 'CAPTURED' | 'VERIFIED' | 'EXPIRED';
+
+export interface WitnessStatement {
+  id: string;
+  incidentId: string;
+  witnessToken: string;
+  statementType: WitnessStatementType;
+  contentHash?: string;
+  captureTimestamp?: string;
+  deviceMetadata?: string;
+  status: WitnessStatementStatus;
+  expiresAt: string;
+  createdAt: string;
+}
+
+// ---- Breach Alerts ----
+
+export type BreachAlertTrigger = 'TIME' | 'LOCATION' | 'COMMUNICATION';
+
+export interface BreachAlert {
+  id: string;
+  clauseId: string;
+  triggerType: BreachAlertTrigger;
+  expectedValue: string; // JSON
+  gracePeriodMin: number;
+  recurrence?: string; // RRULE
+  isActive: boolean;
+  createdAt: string;
+}
+
 export interface CourtFeedItem {
   id: string;
   court: string;

@@ -8,7 +8,6 @@
  * Production: Connect to Whisper API endpoint.
  */
 
-import * as FileSystem from 'expo-file-system';
 import * as SecureStore from 'expo-secure-store';
 import { updateTranscription } from '../database/evidenceRepository';
 import { logAuditEvent } from '../database/auditRepository';
@@ -44,18 +43,14 @@ export async function transcribeAudio(
       throw new Error('Whisper API key not configured');
     }
 
-    // Read audio file as base64
-    const fileBase64 = await FileSystem.readAsStringAsync(audioFileUri, {
-      encoding: FileSystem.EncodingType.Base64,
-    });
-
-    // Create form data for Whisper API
+    // React Native FormData accepts a file-object with { uri, type, name }.
+    // The native networking layer streams the file directly — no base64 round-trip.
     const formData = new FormData();
-
-    // Convert base64 to blob for upload
-    const response = await fetch(`data:audio/m4a;base64,${fileBase64}`);
-    const blob = await response.blob();
-    formData.append('file', blob, 'audio.m4a');
+    formData.append('file', {
+      uri: audioFileUri,
+      type: 'audio/m4a',
+      name: 'audio.m4a',
+    } as unknown as Blob);
     formData.append('model', 'whisper-1');
     formData.append('response_format', 'text');
     formData.append('language', 'en');

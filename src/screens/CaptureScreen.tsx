@@ -12,10 +12,14 @@ import {
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../navigation/AppNavigator';
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import { hardenAndStoreEvidence, importExternalFile } from '../services/captureEngine';
 import { useDatabase } from '../context/DatabaseContext';
+import { getUserProfile } from '../database/userProfileRepository';
+import { checkRecordingConsent } from '../utils/recordingConsent';
 import { theme } from '../theme';
 
 export function CaptureScreen() {
@@ -25,7 +29,7 @@ export function CaptureScreen() {
   const [isRecording, setIsRecording] = useState(false);
   const [facing, setFacing] = useState<'front' | 'back'>('back');
   const cameraRef = useRef<CameraView>(null);
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const { refreshEvidence } = useDatabase();
 
   const capturePhoto = useCallback(async () => {
@@ -46,9 +50,12 @@ export function CaptureScreen() {
       const result = await hardenAndStoreEvidence(photo.uri, 'photo', 'image/jpeg');
       await refreshEvidence();
 
+      const ntpWarning = result.forensicMetadata.ntpServerUsed === 'device_fallback'
+        ? '\n\n⚠️ NTP servers unreachable — timestamp is from device clock and may not be court-admissible.'
+        : '';
       Alert.alert(
         'Evidence Captured',
-        `Photo hardened and locked.\nSHA-256: ${result.forensicMetadata.sha256Hash.substring(0, 16)}...`,
+        `Photo hardened and locked.\nSHA-256: ${result.forensicMetadata.sha256Hash.substring(0, 16)}...${ntpWarning}`,
         [
           { text: 'View', onPress: () => navigation.navigate('EvidenceDetail', { evidenceId: result.evidenceId }) },
           { text: 'OK' },
@@ -68,6 +75,11 @@ export function CaptureScreen() {
       cameraRef.current.stopRecording();
       setIsRecording(false);
     } else {
+      // Display jurisdiction-appropriate recording consent warning (spec v2.0)
+      const profile = await getUserProfile().catch(() => null);
+      const consented = await checkRecordingConsent(profile?.state, 'video');
+      if (!consented) return;
+
       setIsRecording(true);
       setCapturing(true);
       try {
@@ -83,9 +95,12 @@ export function CaptureScreen() {
         const result = await hardenAndStoreEvidence(video.uri, 'video', 'video/mp4');
         await refreshEvidence();
 
+        const ntpWarning = result.forensicMetadata.ntpServerUsed === 'device_fallback'
+          ? '\n\n⚠️ NTP servers unreachable — timestamp is from device clock and may not be court-admissible.'
+          : '';
         Alert.alert(
           'Evidence Captured',
-          `Video hardened and locked.\nSHA-256: ${result.forensicMetadata.sha256Hash.substring(0, 16)}...`,
+          `Video hardened and locked.\nSHA-256: ${result.forensicMetadata.sha256Hash.substring(0, 16)}...${ntpWarning}`,
           [
             { text: 'View', onPress: () => navigation.navigate('EvidenceDetail', { evidenceId: result.evidenceId }) },
             { text: 'OK' },
@@ -121,9 +136,12 @@ export function CaptureScreen() {
       const importResult = await importExternalFile(asset.uri, type, mimeType);
       await refreshEvidence();
 
+      const ntpWarning = importResult.forensicMetadata.ntpServerUsed === 'device_fallback'
+        ? '\n\n⚠️ NTP servers unreachable — timestamp is from device clock and may not be court-admissible.'
+        : '';
       Alert.alert(
         'Evidence Imported',
-        `File hardened and locked.\nSHA-256: ${importResult.forensicMetadata.sha256Hash.substring(0, 16)}...`,
+        `File hardened and locked.\nSHA-256: ${importResult.forensicMetadata.sha256Hash.substring(0, 16)}...${ntpWarning}`,
         [
           { text: 'View', onPress: () => navigation.navigate('EvidenceDetail', { evidenceId: importResult.evidenceId }) },
           { text: 'OK' },

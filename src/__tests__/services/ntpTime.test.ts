@@ -1,11 +1,13 @@
 // NTP module caches offset between calls, so we re-import fresh each test
 let getNTPTime: typeof import('../../services/ntpTime').getNTPTime;
 let getLastSyncInfo: typeof import('../../services/ntpTime').getLastSyncInfo;
+let fetchMock: jest.Mock;
 
 beforeEach(() => {
   jest.resetModules();
   jest.clearAllMocks();
-  (globalThis as any).fetch = jest.fn();
+  fetchMock = jest.fn();
+  (globalThis as unknown as { fetch: jest.Mock }).fetch = fetchMock;
 
   // Re-import to reset module-level cache
   const mod = require('../../services/ntpTime');
@@ -21,7 +23,7 @@ describe('ntpTime', () => {
   const mockDate = '2026-02-20T12:00:00.000Z';
 
   it('fetches time from worldtimeapi and returns NTP result', async () => {
-    ((globalThis as any).fetch as jest.Mock).mockResolvedValueOnce({
+    fetchMock.mockResolvedValueOnce({
       ok: true,
       json: async () => ({ utc_datetime: mockDate }),
     });
@@ -34,7 +36,7 @@ describe('ntpTime', () => {
   });
 
   it('falls back to second API when first fails', async () => {
-    ((globalThis as any).fetch as jest.Mock)
+    fetchMock
       .mockRejectedValueOnce(new Error('Network error'))
       .mockResolvedValueOnce({
         ok: true,
@@ -49,7 +51,7 @@ describe('ntpTime', () => {
   });
 
   it('returns device fallback when all APIs fail', async () => {
-    ((globalThis as any).fetch as jest.Mock)
+    fetchMock
       .mockRejectedValueOnce(new Error('Network error'))
       .mockRejectedValueOnce(new Error('Network error'));
 

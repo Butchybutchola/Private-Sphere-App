@@ -40,11 +40,7 @@ export async function getNTPTime(): Promise<NTPResult> {
   for (const apiUrl of TIME_APIS) {
     try {
       const localBefore = Date.now();
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 5000);
-
-      const response = await fetch(apiUrl, { signal: controller.signal });
-      clearTimeout(timeout);
+      const response = await fetch(apiUrl, { signal: AbortSignal.timeout(5000) });
 
       if (!response.ok) continue;
 

@@ -159,7 +159,7 @@ export async function addCourtFeedItem(item: Omit<CourtFeedItem, 'id' | 'created
 export async function getCourtFeed(jurisdiction?: LegislationJurisdiction, limit = 50): Promise<CourtFeedItem[]> {
   const db = await getDatabase();
   let query = 'SELECT * FROM court_feed';
-  const params: unknown[] = [];
+  const params: (string | number | boolean | null)[] = [];
 
   if (jurisdiction) {
     query += ' WHERE jurisdiction = ?';
@@ -215,7 +215,7 @@ export async function addUpdateLog(log: Omit<LegislationUpdateLog, 'id' | 'times
 export async function getUpdateLogs(legislationId?: string, limit = 50): Promise<LegislationUpdateLog[]> {
   const db = await getDatabase();
   let query = 'SELECT * FROM legislation_update_log';
-  const params: unknown[] = [];
+  const params: (string | number | boolean | null)[] = [];
 
   if (legislationId) {
     query += ' WHERE legislation_id = ?';

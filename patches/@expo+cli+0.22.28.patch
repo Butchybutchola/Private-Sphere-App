@@ -1,0 +1,17 @@
+diff --git a/node_modules/@expo/cli/build/src/start/server/middleware/resolveRuntimeVersionWithExpoUpdatesAsync.js b/node_modules/@expo/cli/build/src/start/server/middleware/resolveRuntimeVersionWithExpoUpdatesAsync.js
+index a70b99e..e6179bd 100644
+--- a/node_modules/@expo/cli/build/src/start/server/middleware/resolveRuntimeVersionWithExpoUpdatesAsync.js
++++ b/node_modules/@expo/cli/build/src/start/server/middleware/resolveRuntimeVersionWithExpoUpdatesAsync.js
+@@ -26,10 +26,8 @@ async function resolveRuntimeVersionWithExpoUpdatesAsync({ projectRoot , platfor
+         debug(resolvedRuntimeVersionJSONResult);
+         return runtimeVersionResult.runtimeVersion ?? null;
+     } catch (e) {
+-        if (e instanceof _expoUpdatesCli.ExpoUpdatesCLIModuleNotFoundError) {
+-            return null;
+-        }
+-        throw e;
++        debug("expo-updates runtimeversion:resolve failed, falling back to config-plugin resolution:", e.message);
++        return null;
+     }
+ }
+ 

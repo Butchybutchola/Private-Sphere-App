@@ -13,9 +13,13 @@ import {
 import { Audio } from 'expo-av';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../navigation/AppNavigator';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { hardenAndStoreEvidence } from '../services/captureEngine';
 import { useDatabase } from '../context/DatabaseContext';
+import { getUserProfile } from '../database/userProfileRepository';
+import { checkRecordingConsent } from '../utils/recordingConsent';
 import { theme } from '../theme';
 
 export function AudioRecorderScreen() {
@@ -25,7 +29,7 @@ export function AudioRecorderScreen() {
   const [blackScreen, setBlackScreen] = useState(false);
   const [saving, setSaving] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const { refreshEvidence } = useDatabase();
 
   useEffect(() => {
@@ -44,6 +48,11 @@ export function AudioRecorderScreen() {
   };
 
   const startRecording = async () => {
+    // Display jurisdiction-appropriate recording consent warning (spec v2.0)
+    const profile = await getUserProfile().catch(() => null);
+    const consented = await checkRecordingConsent(profile?.state, 'audio');
+    if (!consented) return;
+
     try {
       const permission = await Audio.requestPermissionsAsync();
       if (!permission.granted) {
@@ -104,9 +113,12 @@ export function AudioRecorderScreen() {
       setIsRecording(false);
       setBlackScreen(false);
 
+      const ntpWarning = result.forensicMetadata.ntpServerUsed === 'device_fallback'
+        ? '\n\n⚠️ NTP servers unreachable — timestamp is from device clock and may not be court-admissible.'
+        : '';
       Alert.alert(
         'Audio Evidence Captured',
-        `Duration: ${formatDuration(duration)}\nSHA-256: ${result.forensicMetadata.sha256Hash.substring(0, 16)}...`,
+        `Duration: ${formatDuration(duration)}\nSHA-256: ${result.forensicMetadata.sha256Hash.substring(0, 16)}...${ntpWarning}`,
         [
           { text: 'View', onPress: () => navigation.navigate('EvidenceDetail', { evidenceId: result.evidenceId }) },
           { text: 'OK', onPress: () => navigation.goBack() },
